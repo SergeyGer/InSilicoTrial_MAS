@@ -10,6 +10,7 @@ can diff two runs and see only what actually changed.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from importlib import resources
@@ -62,7 +63,7 @@ def _format_number(value: Any, digits: int = 2) -> str:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
-    if number != number:  # NaN
+    if math.isnan(number):
         return "n/a"
     if abs(number) >= 1000:
         return f"{number:,.0f}"
@@ -76,7 +77,7 @@ def _format_pct(value: Any, digits: int = 1) -> str:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
-    if number != number:
+    if math.isnan(number):
         return "n/a"
     return f"{number * 100:.{digits}f}%"
 
@@ -88,7 +89,7 @@ def _format_p(value: Any) -> str:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
-    if number != number:
+    if math.isnan(number):
         return "n/a"
     if number < 0.0001:
         return "<0.0001"

@@ -139,7 +139,7 @@ class PhysiologyModel(Protocol):
         placebo_effect: dict[str, float],
         seed: int,
     ) -> PhysiologyPrediction:  # pragma: no cover - protocol
-        ...
+        raise NotImplementedError("implemented by MechanisticPhysiology and HybridPhysiologyModel")
 
 
 def feature_vector(
