@@ -188,37 +188,33 @@ def test_offline_provider_needs_no_credentials(tmp_path: Path) -> None:
     assert client.provider == "offline"
 
 
-def test_safe_error_redacts_provider_messages(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Provider messages can echo prompts or keys, so logging them is opt-in.
+def test_error_kind_never_returns_provider_text(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Log lines and Silver columns get a fixed label, never the provider message.
 
-    Guards CodeQL ``py/clear-text-logging-sensitive-data``: the helper is the only
-    sanctioned way to put an exception into a log line or a Silver row.
+    Guards CodeQL ``py/clear-text-logging-sensitive-data``: SDK errors can echo the
+    prompt or the API key, so ``error_kind`` returns a constant from a closed
+    vocabulary and ``debug_error_text`` (exception chaining only) is the sole way to
+    see the message.
     """
-    from insilico_trial_mas.logging_utils import safe_error
+    from insilico_trial_mas.logging_utils import ERROR_KINDS, debug_error_text, error_kind
 
     secret = "sk-live-abcdef123456"
-    error = RuntimeError(f"AccessDenied for key {secret}")
+    error = TimeoutError(f"Bedrock timed out for key {secret}")
 
-    monkeypatch.delenv("INSILICO_DEBUG_EXCEPTIONS", raising=False)
-    redacted = safe_error(error)
-    assert "RuntimeError" in redacted
-    assert secret not in redacted
-    assert "INSILICO_DEBUG_EXCEPTIONS" in redacted, "the escape hatch must be discoverable"
+    kind = error_kind(error)
+    assert kind == "timeout"
+    assert secret not in kind
+    assert kind in {label for _, label in ERROR_KINDS}, "the label must come from the closed vocabulary"
+    assert error_kind(RuntimeError("boom")) == "unexpected-error"
+    assert error_kind(ValueError("bad json")) == "invalid-value"
 
-    monkeypatch.setenv("INSILICO_DEBUG_EXCEPTIONS", "1")
-    assert secret in safe_error(error), "explicit opt-in restores the full message"
-    assert secret in safe_error(error, include_message=True)
+    # The developer-facing text exists, but is only sanctioned inside an exception.
+    assert secret in debug_error_text(error)
 
 
-def test_patient_agent_does_not_log_provider_text(tmp_path) -> None:
-    """The persona agent must store a redacted summary, not the raw provider error."""
-    import logging
-
-    from insilico_trial_mas.logging_utils import get_logger
-
+def test_patient_agent_does_not_log_provider_text() -> None:
+    """The persona agent must log a label and store it in ``llm_error``."""
     source = (REPO_ROOT / "src" / "insilico_trial_mas" / "agents" / "patient_agent.py").read_text(encoding="utf-8")
-    assert "safe_error(exc)" in source
-    assert "{exc}" not in source, "raw exception interpolation would leak provider text"
-    logger = get_logger("agents.patient")
-    assert isinstance(logger, logging.Logger)
-    del tmp_path
+    assert "error_kind(exc)" in source
+    for forbidden in ("{exc}", "{summary}", "debug_error_text"):
+        assert forbidden not in source, f"{forbidden} would put provider text into a log line"

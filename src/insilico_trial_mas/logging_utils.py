@@ -69,20 +69,45 @@ def configure_logging(level: str | int | None = None, *, json_logs: bool | None 
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
-def safe_error(exc: BaseException, *, include_message: bool | None = None) -> str:
-    """Summarise an exception without risking a secret in the log.
+#: Fixed error vocabulary. Log lines and the ``llm_error`` column must be
+#: machine-parsable and, more importantly, must never contain text produced by a
+#: provider SDK: those messages are not careful about what they echo back and can
+#: contain the request payload, the prompt or the API key
+#: (CodeQL ``py/clear-text-logging-sensitive-data``).
+ERROR_KINDS: tuple[tuple[type[BaseException], str], ...] = (
+    (TimeoutError, "timeout"),
+    (ConnectionError, "connection"),
+    (PermissionError, "permission"),
+    (FileNotFoundError, "not-found"),
+    (OSError, "io-error"),
+    (KeyError, "missing-field"),
+    (ValueError, "invalid-value"),
+    (TypeError, "invalid-type"),
+    (ArithmeticError, "arithmetic-error"),
+)
 
-    Provider SDKs are not careful about what they echo back: a throttling or
-    authentication error can contain the request payload, the prompt, or the API
-    key that caused it. Logging ``f"{exc}"`` therefore copies that text into the
-    log stream, the Delta tables and any attached bug report. By default this
-    returns the exception *type* only; set ``INSILICO_DEBUG_EXCEPTIONS=1`` (or pass
-    ``include_message=True``) when a full message is genuinely needed for triage.
+
+def error_kind(exc: BaseException) -> str:
+    """Classify an exception into a fixed label for logs and Silver columns.
+
+    Returns a constant from :data:`ERROR_KINDS`, never a string built from the
+    exception, so no provider text can leak into a log, a Delta table or an
+    attached issue. Use :func:`debug_error_text` when a human-readable message is
+    genuinely required - and only in an exception, never in a log call.
     """
-    if include_message is None:
-        include_message = os.environ.get("INSILICO_DEBUG_EXCEPTIONS", "").lower() in {"1", "true", "yes"}
-    if not include_message:
-        return f"{type(exc).__name__} (set INSILICO_DEBUG_EXCEPTIONS=1 for the provider message)"
+    for exception_type, label in ERROR_KINDS:
+        if isinstance(exc, exception_type):
+            return label
+    return "unexpected-error"
+
+
+def debug_error_text(exc: BaseException) -> str:
+    """Full ``Type: message`` text for the developer, for exception chaining only.
+
+    Safe in ``raise ... from``/``raise X(f"... {debug_error_text(exc)}")`` because
+    exception objects are not persisted, but it must never be passed to a logger or
+    written to a store: the message is outside our control.
+    """
     return f"{type(exc).__name__}: {exc}"
 
 
