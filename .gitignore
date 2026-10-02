@@ -9,6 +9,14 @@ dist/
 venv/
 .python-version
 
+# --- Distribution archives ------------------------------------------------
+# Release tarballs and wheels are build outputs, and a stray archive picked up by
+# `git add -A` is both huge and unreviewable.
+*.tar.gz
+*.tgz
+*.zip
+*.whl
+
 # --- Test / lint caches ---------------------------------------------------
 .pytest_cache/
 .mypy_cache/

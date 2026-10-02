@@ -115,7 +115,11 @@ participant, and the Biostatistician Agent reads the results.
    intervals, monitors safety against the protocol's stopping rules and emits the
    report, the interactive dashboard, CDISC-inspired exports and the run manifest.
 
-**The three agents**
+**The three agents** — and [why agents at all](docs/WHY_AGENTS.md): the trial has
+three actors with different information and different decisions, so the agent
+boundary is what enforces blinding, interim analyses and per-agent fault isolation,
+while the PK/PD, the learned head and the statistics stay ordinary deterministic
+functions.
 
 | Agent | Module | Responsibility |
 | --- | --- | --- |
@@ -418,6 +422,7 @@ plus CodeQL analysis and Dependabot updates.
 | Document | Contents |
 | --- | --- |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layered design, engine abstraction, determinism, LLM resilience, diagrams |
+| [docs/WHY_AGENTS.md](docs/WHY_AGENTS.md) | Why the trial is modelled as agents: the requirements the boundary carries, and where agents are deliberately *not* used |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Every table, column, JSON payload and export format |
 | [docs/UI.md](docs/UI.md) | UI design record, screens, design system, extension points |
 | [docs/RUNBOOK_DATABRICKS_AWS.md](docs/RUNBOOK_DATABRICKS_AWS.md) | Sizing, cost control, monitoring queries, failure playbook |
