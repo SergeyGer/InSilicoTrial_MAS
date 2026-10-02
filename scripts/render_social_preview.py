@@ -19,11 +19,13 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import struct
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+if TYPE_CHECKING:  # pragma: no cover - imported lazily so --check needs no dependency
+    from PIL import Image, ImageDraw, ImageFont
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = REPO_ROOT / ".github" / "social-preview.png"
@@ -50,14 +52,31 @@ FONT_MONO = FONT_DIR / "DejaVuSansMono.ttf"
 
 def font(path: Path, size: int) -> ImageFont.FreeTypeFont:
     """Load a font, falling back to Pillow's default if the system lacks it."""
+    from PIL import ImageFont
+
     try:
         return ImageFont.truetype(str(path), size)
     except OSError:  # pragma: no cover - minimal container without DejaVu
         return ImageFont.load_default(size)
 
 
+def png_size(path: Path) -> tuple[int, int]:
+    """Read width/height straight from the PNG IHDR chunk.
+
+    Avoids importing Pillow (and NumPy) just to validate the committed artefact,
+    so the CI freshness check stays dependency-free.
+    """
+    with path.open("rb") as handle:
+        header = handle.read(24)
+    if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError(f"{path} is not a PNG file")
+    width, height = struct.unpack(">II", header[16:24])
+    return int(width), int(height)
+
+
 def background() -> Image.Image:
     """Vertical gradient with a soft diagonal accent wash in the top-right."""
+    import numpy as np
     canvas = np.zeros((HEIGHT, WIDTH, 3), dtype=np.float32)
     ramp = np.linspace(0.0, 1.0, HEIGHT, dtype=np.float32)[:, None]
     for channel in range(3):
@@ -71,11 +90,28 @@ def background() -> Image.Image:
     return Image.fromarray(canvas.astype(np.uint8), "RGB")
 
 
-def rounded(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], radius: int, *, fill=None, outline=None, width=1) -> None:
+def rounded(
+    draw: ImageDraw.ImageDraw,
+    box: tuple[int, int, int, int],
+    radius: int,
+    *,
+    fill: tuple[int, ...] | None = None,
+    outline: tuple[int, ...] | None = None,
+    width: int = 1,
+) -> None:
     draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
 
 
-def chip(draw: ImageDraw.ImageDraw, x: int, y: int, label: str, *, ink=MUTED, outline=CARD_LINE, size=15) -> int:
+def chip(
+    draw: ImageDraw.ImageDraw,
+    x: int,
+    y: int,
+    label: str,
+    *,
+    ink: tuple[int, int, int] = MUTED,
+    outline: tuple[int, int, int] = CARD_LINE,
+    size: int = 15,
+) -> int:
     """Draw a pill-shaped chip and return the x coordinate after it."""
     fnt = font(FONT_REGULAR, size)
     pad_x, pad_y = 14, 7
@@ -144,6 +180,8 @@ def draw_chart_motif(image: Image.Image) -> None:
 
 
 def build() -> Image.Image:
+    from PIL import ImageDraw
+
     image = background()
     draw = ImageDraw.Draw(image, "RGBA")
 
@@ -204,11 +242,11 @@ def main() -> int:
         if not OUTPUT.exists():
             print(f"missing social preview: {OUTPUT.relative_to(REPO_ROOT)}", file=sys.stderr)
             return 1
-        with Image.open(OUTPUT) as image:
-            if image.size != (WIDTH, HEIGHT):
-                print(f"social preview must be {WIDTH}x{HEIGHT}, found {image.size}", file=sys.stderr)
-                return 1
-        print("social preview is present and correctly sized")
+        size = png_size(OUTPUT)
+        if size != (WIDTH, HEIGHT):
+            print(f"social preview must be {WIDTH}x{HEIGHT}, found {size}", file=sys.stderr)
+            return 1
+        print(f"social preview is present and correctly sized ({size[0]}x{size[1]})")
         return 0
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

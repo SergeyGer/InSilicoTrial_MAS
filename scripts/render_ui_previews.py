@@ -26,10 +26,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from insilico_trial_mas.ui import studio  # noqa: E402
-from insilico_trial_mas.ui.dashboard import build_dashboard  # noqa: E402
-from insilico_trial_mas.ui.data import load_dashboard_data, resolve_run_dir  # noqa: E402
-
 STUDIO_PREVIEW = REPO_ROOT / "docs" / "studio-preview.html"
 DASHBOARD_PREVIEW = REPO_ROOT / "docs" / "dashboard-preview.html"
 
@@ -42,11 +38,16 @@ STUDIO_HEADER = """<!--
 
 
 def render_studio_preview() -> Path:
+    from insilico_trial_mas.ui import studio
+
     STUDIO_PREVIEW.write_text(STUDIO_HEADER + studio.STUDIO_HTML, encoding="utf-8")
     return STUDIO_PREVIEW
 
 
 def render_dashboard_preview(run: str | None) -> Path | None:
+    from insilico_trial_mas.ui.dashboard import build_dashboard
+    from insilico_trial_mas.ui.data import load_dashboard_data, resolve_run_dir
+
     if run is None:
         candidates = sorted((REPO_ROOT / "artifacts").glob("*/RUN-*"), key=lambda p: p.stat().st_mtime, reverse=True)
         if not candidates:
@@ -68,10 +69,16 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.check:
+        # Deliberately dependency-free: this runs on a bare CI runner to catch a
+        # stale committed preview, which must not require the scientific stack.
         missing = [path for path in (STUDIO_PREVIEW, DASHBOARD_PREVIEW) if not path.exists()]
         for path in missing:
             print(f"missing UI preview: {path.relative_to(REPO_ROOT)}", file=sys.stderr)
-        return 1 if missing else 0
+        if missing:
+            return 1
+        for path in (STUDIO_PREVIEW, DASHBOARD_PREVIEW):
+            print(f"UI preview present: {path.relative_to(REPO_ROOT)} ({path.stat().st_size // 1024} KB)")
+        return 0
 
     studio_path = render_studio_preview()
     print(f"studio preview written to {studio_path.relative_to(REPO_ROOT)}")

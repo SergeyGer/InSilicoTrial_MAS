@@ -21,6 +21,7 @@ from insilico_trial_mas.credentials import (
     provider_has_credentials,
 )
 from insilico_trial_mas.engine.checklist import inspect_environment
+from insilico_trial_mas.errors import ConfigurationError, LLMProviderError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -167,7 +168,10 @@ def test_factory_warns_before_failing_on_a_credentialed_provider() -> None:
     logger = get_logger("llm.factory")
     logger.addHandler(handler)
     try:
-        with pytest.raises(Exception):
+        # Without the optional [llm] extra the provider cannot even be built, so the
+        # run ends in ConfigurationError (or an SDK error when langchain-aws is
+        # installed) - what matters is that the warning was logged first.
+        with pytest.raises((ConfigurationError, LLMProviderError, OSError, ValueError)):
             create_llm_client(LLMConfig(provider="bedrock", model="us.anthropic.example", cache_enabled=False))
     finally:
         logger.removeHandler(handler)
