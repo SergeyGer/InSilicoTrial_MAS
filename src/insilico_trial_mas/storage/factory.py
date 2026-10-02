@@ -92,6 +92,7 @@ class MemoryStore(BaseStore):
 def create_store(config, *, spark=None) -> BaseStore:
     """Instantiate the store described by ``config.storage``."""
     backend = config.storage.backend
+    logger.debug(f"storage backend: {backend} (root: {config.storage.root_uri or config.storage.local_root})")
     if backend == "memory":
         return MemoryStore(config.storage)
     if backend == "local":

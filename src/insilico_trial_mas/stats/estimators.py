@@ -123,8 +123,8 @@ def newcombe_difference_interval(
     l1, u1 = wilson_interval(s1, n1, confidence)
     l2, u2 = wilson_interval(s2, n2, confidence)
     p1, p2 = s1 / n1, s2 / n2
-    lower = (p1 - p2) - math.sqrt((p1 - l1) ** 2 + (u2 - p2) ** 2)
-    upper = (p1 - p2) + math.sqrt((u1 - p1) ** 2 + (p2 - l2) ** 2)
+    lower = (p1 - p2) - math.hypot(p1 - l1, u2 - p2)
+    upper = (p1 - p2) + math.hypot(u1 - p1, p2 - l2)
     return (max(-1.0, lower), min(1.0, upper))
 
 

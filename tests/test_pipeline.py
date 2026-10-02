@@ -188,13 +188,11 @@ def test_derived_silver_tables_are_written_on_every_backend(pipeline) -> None:
 
 def test_lineage_covers_the_derived_tables(pipeline) -> None:
     result = pipeline.run(run_id="RUN-LIN")
-    nodes = {node["node_id"] for node in result.lineage.get("nodes", [])} if isinstance(result.lineage.get("nodes"), list) else set()
     manifest = json.loads(Path(result.manifest_path).read_text(encoding="utf-8"))
     graph_nodes = {node["node_id"] for node in manifest["lineage_graph"]["nodes"]}
     assert "silver.patient_states" in graph_nodes
     assert "silver.adverse_events" in graph_nodes
     assert "silver.screen_failures" in graph_nodes
-    del nodes
 
 
 def test_llm_raw_traces_reach_bronze(config, protocol) -> None:
