@@ -5,10 +5,14 @@
 # (`make check`, `make test-spark`) rather than merged blindly.
 version: 2
 
+# Branch protection requires pull requests to be up to date with main,
+# so Dependabot rebases its own branches instead of waiting for a maintainer.
+
 updates:
   # Core runtime, optional extras and dev tooling: pyproject.toml, requirements.txt,
   # requirements-dev.txt.
   - package-ecosystem: "pip"
+    rebase-strategy: "auto"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -30,6 +34,7 @@ updates:
 
   # Actions pinned in .github/workflows/ (CI and CodeQL).
   - package-ecosystem: "github-actions"
+    rebase-strategy: "auto"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -47,6 +52,7 @@ updates:
 
   # Terraform providers used by the Unity Catalog / AWS storage module.
   - package-ecosystem: "terraform"
+    rebase-strategy: "auto"
     directory: "/terraform"
     schedule:
       interval: "weekly"
