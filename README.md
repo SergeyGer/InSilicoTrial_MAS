@@ -269,6 +269,25 @@ Profiles in [`conf/`](conf):
 Any field can be overridden from the environment:
 `INSILICO_ENGINE__BACKEND=spark INSILICO_N_PATIENTS=50000 insilico-trial simulate …`
 
+### Credentials
+
+No `.env` is committed, and none is required: the default profile uses the
+deterministic **offline** persona provider, so CI, a laptop and Databricks
+Community Edition run with zero credentials. For real providers the platform reads
+each SDK's standard chain — the cluster IAM role or instance profile (preferred),
+`AWS_PROFILE`/`AWS_ROLE_ARN` for Bedrock, `OPENAI_API_KEY` for OpenAI,
+`DATABRICKS_HOST` + token/OAuth for the workspace, `MLFLOW_TRACKING_URI` for
+tracking. Terraform provisions an AWS Secrets Manager backed scope (`insilico-llm`)
+for teams that must hold keys. `insilico-trial env-check` reports which chains are
+configured — presence only, never a value.
+
+```bash
+cp .env.example .env        # optional, git-ignored; VS Code loads it automatically
+insilico-trial env-check    # credentials: aws-bedrock=no, databricks=yes, …
+```
+
+Full reference: [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
+
 ---
 
 ## Project layout
@@ -333,6 +352,7 @@ plus CodeQL analysis and Dependabot updates.
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Every table, column, JSON payload and export format |
 | [docs/UI.md](docs/UI.md) | UI design record, screens, design system, extension points |
 | [docs/RUNBOOK_DATABRICKS_AWS.md](docs/RUNBOOK_DATABRICKS_AWS.md) | Sizing, cost control, monitoring queries, failure playbook |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Profiles, environment overrides, credential chains, secrets on Databricks |
 | [docs/SPEC_COMPLIANCE.md](docs/SPEC_COMPLIANCE.md) | Requirement → implementation → test mapping, and every defect fixed |
 | [docs/ETHICS_AND_LIMITATIONS.md](docs/ETHICS_AND_LIMITATIONS.md) | Responsible use, bias, what the model does not capture |
 | [docs/REPOSITORY_SETTINGS.md](docs/REPOSITORY_SETTINGS.md) | Recommended GitHub configuration (About, topics, protection rules) |

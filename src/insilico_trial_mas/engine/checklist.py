@@ -17,6 +17,7 @@ from importlib import import_module
 from typing import Any
 
 from ..config import SimulationConfig
+from ..credentials import detect_credentials
 from ..logging_utils import get_logger
 
 logger = get_logger("engine.checklist")
@@ -121,6 +122,7 @@ class EnvironmentReport:
     recommended_workers: int
     notes: list[str] = field(default_factory=list)
     packages: dict[str, bool] = field(default_factory=dict)
+    credentials: dict[str, bool] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -139,11 +141,16 @@ class EnvironmentReport:
             "recommended_backend": self.recommended_backend,
             "recommended_workers": self.recommended_workers,
             "packages": self.packages,
+            "credentials": self.credentials,
             "notes": self.notes,
         }
 
     def render(self) -> str:
         """Human-readable checklist (used by ``insilico-trial env-check``)."""
+        credential_summary = (
+            ", ".join(f"{name}={'yes' if present else 'no'}" for name, present in sorted(self.credentials.items()))
+            or "none detected"
+        )
         lines = [
             "InSilicoTrial MAS - environment checklist",
             f"  python            : {self.python_version} ({self.platform})",
@@ -153,6 +160,8 @@ class EnvironmentReport:
             f"  databricks        : {self.databricks} (community edition: {self.databricks_community})",
             f"  spark master      : {self.master or 'not started'} ({self.executors} executors)",
             f"  packages          : {', '.join(f'{k}={int(v)}' for k, v in sorted(self.packages.items()))}",
+            f"  credentials       : {credential_summary}",
+            "                      (presence only - values are never read or logged)",
             f"  => engine         : {self.recommended_backend} (workers={self.recommended_workers})",
         ]
         lines.extend(f"  note              : {note}" for note in self.notes)
@@ -200,6 +209,21 @@ def inspect_environment(config: SimulationConfig | None = None) -> EnvironmentRe
     if backend == "local" and config.n_patients > 200_000:
         notes.append("large cohort on the local engine: expect minutes of runtime; prefer a Databricks cluster")
 
+    credentials = detect_credentials()
+    if not credentials.get("aws-bedrock") and config.llm.provider == "bedrock":
+        notes.append(
+            "llm.provider=bedrock but no AWS credentials were detected: configure the standard boto3 chain "
+            "(AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, AWS_PROFILE, or the instance role) or switch to "
+            "llm.provider=offline for a deterministic credential-free run"
+        )
+    if not credentials.get("openai") and config.llm.provider == "openai":
+        notes.append("llm.provider=openai but OPENAI_API_KEY is not set")
+    if not credentials.get("aws-bedrock") and not credentials.get("openai"):
+        notes.append(
+            "no LLM credentials detected: the deterministic offline persona provider is used "
+            "(identical JSON contract, no network, fully reproducible)"
+        )
+
     workers = config.engine.max_workers or (max(1, cpu_count) if backend == "local" else 1)
     packages = {
         name: _module_available(name)
@@ -222,4 +246,5 @@ def inspect_environment(config: SimulationConfig | None = None) -> EnvironmentRe
         recommended_workers=workers,
         notes=notes,
         packages=packages,
+        credentials=detect_credentials(),
     )

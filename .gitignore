@@ -42,7 +42,10 @@ mlflow.db
 dashboard.html
 
 # --- Secrets / infrastructure state --------------------------------------
+# `.env.example` is committed as a template; real values never are.
 .env
+.env.*
+!.env.example
 *.tfstate
 *.tfstate.*
 .terraform/

@@ -10,6 +10,7 @@ with ``llm_error`` instead of aborting the run.
 from __future__ import annotations
 
 from ..config import LLMConfig
+from ..credentials import missing_credentials_hint, provider_has_credentials
 from ..logging_utils import get_logger
 from .base import BaseLLMClient
 from .cache import LLMResponseCache
@@ -49,6 +50,12 @@ def create_llm_client(
     elif provider_name == "echo":
         inner = EchoLLMClient()
     else:
+        # Preflight: name the missing credential chain here, rather than letting
+        # the provider SDK raise an opaque error inside a 10,000-agent run. This
+        # is a warning, not an error: on EC2 or Databricks an instance role
+        # supplies credentials that no environment variable reveals.
+        if not provider_has_credentials(provider_name):
+            logger.warning(missing_credentials_hint(provider_name))
         from .langchain_provider import LangChainChatClient
 
         inner = LangChainChatClient.from_config(config)
