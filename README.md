@@ -359,7 +359,7 @@ into `engine/`, new artefacts into `reporting/` and `ui/`. Items marked
 
 | Initiative | What it unlocks | Entry point |
 | --- | --- | --- |
-| Migrate to the AWS Terraform provider 6.x | Removes the last pinned major dependency ([issue #9](https://github.com/SergeyGer/InSilicoTrial_MAS/issues/9)) | `terraform/versions.tf` |
+| Validate and adopt **Spark 4.x**, then widen the bound to `pyspark>=3.5,<5.0` | The constraint stays `<4.0` until a CI leg actually runs the engine tests against 4.x — a metadata-only widening would ship an untested combination | `.github/workflows/ci.yml`, `pyproject.toml` |
 | Sparse PK sampling per patient | Models real trials, where a patient gives 3-5 samples instead of a full curve; feeds exposure-response analysis | `ml/pk_pd.py` |
 | Baseline-adjusted (ANCOVA) endpoint analysis | The standard primary analysis in modern protocols; more power than change-from-baseline | `agents/biostatistician_agent.py` |
 | Dropout and missing-data mechanisms (MCAR/MAR) with sensitivity analysis | Stops completers-only results from flattering a dose | `agents/patient_agent.py` |
