@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 from collections.abc import Iterable, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
@@ -151,7 +152,7 @@ def _fmt(value: Any, digits: int = 2, suffix: str = "") -> str:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
-    if number != number:
+    if math.isnan(number):
         return "n/a"
     if abs(number) >= 1000:
         return f"{number:,.0f}{suffix}"
@@ -165,7 +166,7 @@ def _fmt_pct(value: Any, digits: int = 1) -> str:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
-    if number != number:
+    if math.isnan(number):
         return "n/a"
     return f"{number * 100:.{digits}f}%"
 
@@ -177,7 +178,7 @@ def _fmt_p(value: Any) -> str:
         number = float(value)
     except (TypeError, ValueError):
         return str(value)
-    if number != number:
+    if math.isnan(number):
         return "n/a"
     if number < 0.0001:
         return "<0.0001"

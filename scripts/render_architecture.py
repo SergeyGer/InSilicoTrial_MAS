@@ -79,7 +79,6 @@ def card(
     subtitle: str = "",
     lines: tuple[str, ...] = (),
     accent: str = ACCENT,
-    soft: str = ACCENT_SOFT,
     title_size: float = 14.5,
     mono_subtitle: bool = False,
 ) -> None:
@@ -107,7 +106,6 @@ def card(
             f'fill="{MUTED}">{escape(line)}</text>'
         )
         cursor += 15
-    del soft
 
 
 def chip(x: float, y: float, w: float, text: str, *, fill: str = ACCENT_SOFT, ink: str = ACCENT, size: float = 11) -> None:

@@ -53,7 +53,9 @@ def run_sync(coro: Awaitable[T]) -> T:
             loop = asyncio.new_event_loop()
             try:
                 result.append(loop.run_until_complete(coro))
-            except BaseException as exc:
+            except Exception as exc:
+                # Ordinary failures are re-raised in the caller's thread; control-flow
+                # exceptions (KeyboardInterrupt/SystemExit) are left to propagate.
                 error.append(exc)
             finally:
                 loop.close()

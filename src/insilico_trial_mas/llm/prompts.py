@@ -206,6 +206,7 @@ def _extract_payload(text: str) -> tuple[dict[str, Any], bool]:
         raise ValueError("empty response")
 
     payload: Any = None
+    failure: Exception | None = None
     for extractor in (lambda text: text, _first_object, _first_array):
         raw = extractor(candidate)
         if not raw:
@@ -213,14 +214,17 @@ def _extract_payload(text: str) -> tuple[dict[str, Any], bool]:
         try:
             payload = json.loads(raw)
             break
-        except json.JSONDecodeError:
-            pass
+        except json.JSONDecodeError as strict_error:
+            # Expected for the shapes models actually emit: fenced JSON, trailing
+            # commas, single quotes. Fall through to the repair strategies below and
+            # remember why, so a total failure can report the original cause.
+            failure = strict_error
         try:
             payload = json.loads(_repair_json(raw))
             repaired = True
             break
-        except json.JSONDecodeError:
-            pass
+        except json.JSONDecodeError as repair_error:
+            failure = repair_error
         try:
             literal = ast.literal_eval(raw)
         except (ValueError, SyntaxError):
@@ -231,7 +235,7 @@ def _extract_payload(text: str) -> tuple[dict[str, Any], bool]:
             break
 
     if payload is None:
-        raise ValueError("no JSON object found in the response")
+        raise ValueError(f"no JSON object found in the response ({failure})")
     if isinstance(payload, list):  # tolerate a bare array of symptoms
         payload = {"symptoms": payload}
     if not isinstance(payload, dict):

@@ -87,12 +87,13 @@ class DeltaStore(BaseStore):
         if partition_columns:
             writer = writer.partitionBy(*partition_columns)
         try:
-            if self._is_path():
-                writer = writer.option("path", location)
-                if self.spark.catalog.tableExists(location):
-                    writer = writer.insertInto(location)
-                else:
-                    writer.saveAsTable(location)
+            if self._is_path() and self.spark.catalog.tableExists(location):
+                # Appending to an existing path-based table: `insertInto` ignores the
+                # write mode, so it is called on its own rather than through the
+                # configured writer (which would silently be discarded).
+                spark_frame.write.format("delta").insertInto(location)
+            elif self._is_path():
+                writer.option("path", location).saveAsTable(location)
             else:
                 writer.saveAsTable(location)
         except Exception as exc:
