@@ -69,6 +69,23 @@ def configure_logging(level: str | int | None = None, *, json_logs: bool | None 
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
+def safe_error(exc: BaseException, *, include_message: bool | None = None) -> str:
+    """Summarise an exception without risking a secret in the log.
+
+    Provider SDKs are not careful about what they echo back: a throttling or
+    authentication error can contain the request payload, the prompt, or the API
+    key that caused it. Logging ``f"{exc}"`` therefore copies that text into the
+    log stream, the Delta tables and any attached bug report. By default this
+    returns the exception *type* only; set ``INSILICO_DEBUG_EXCEPTIONS=1`` (or pass
+    ``include_message=True``) when a full message is genuinely needed for triage.
+    """
+    if include_message is None:
+        include_message = os.environ.get("INSILICO_DEBUG_EXCEPTIONS", "").lower() in {"1", "true", "yes"}
+    if not include_message:
+        return f"{type(exc).__name__} (set INSILICO_DEBUG_EXCEPTIONS=1 for the provider message)"
+    return f"{type(exc).__name__}: {exc}"
+
+
 def get_logger(name: str) -> logging.Logger:
     """Return a namespaced logger, configuring logging on first use."""
     if not _configured:

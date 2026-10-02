@@ -17,6 +17,7 @@ crash there would look like a failed simulation.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -72,6 +73,22 @@ SILVER_COLUMNS: tuple[str, ...] = (
     "prompt_hash",
     "physiology_model_version",
     "physiology_backend",
+)
+
+#: Environment fields the reproducibility panel actually renders. Whitelisting
+#: them keeps the dashboard payload to what the UI shows (data minimisation) and
+#: stops it from carrying anything the run manifest happens to record - for example
+#: the credential-presence map, which the panel never displays.
+DASHBOARD_ENVIRONMENT_FIELDS: tuple[str, ...] = (
+    "python_version",
+    "platform",
+    "cpu_count",
+    "memory_gb",
+    "pyspark_available",
+    "java_available",
+    "databricks",
+    "databricks_community",
+    "recommended_backend",
 )
 
 #: Guard rails: a dashboard is a demo artefact, not an archive.
@@ -243,7 +260,8 @@ def load_dashboard_data(run_dir: str | Path) -> DashboardData:
     data.cohort = dict(manifest.get("cohort") or {})
     data.screening = dict(manifest.get("screening") or {})
     data.estimate = dict(manifest.get("estimate") or {})
-    data.environment = dict(manifest.get("environment") or {})
+    environment = manifest.get("environment") or {}
+    data.environment = {name: environment[name] for name in DASHBOARD_ENVIRONMENT_FIELDS if name in environment}
     data.replay = dict(manifest.get("replay") or {})
     data.storage = dict(manifest.get("storage") or {})
     data.warnings = list(manifest.get("protocol_warnings") or report.get("protocol_warnings") or [])
@@ -537,4 +555,4 @@ def _safe_float(value: Any) -> float | None:
         number = float(value)
     except (TypeError, ValueError):
         return None
-    return None if number != number else round(number, 4)
+    return None if math.isnan(number) else round(number, 4)
