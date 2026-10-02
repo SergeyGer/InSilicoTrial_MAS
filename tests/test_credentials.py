@@ -186,3 +186,39 @@ def test_offline_provider_needs_no_credentials(tmp_path: Path) -> None:
 
     client = create_llm_client(LLMConfig(provider="offline", cache_enabled=False, cache_path=str(tmp_path / "cache.jsonl")))
     assert client.provider == "offline"
+
+
+def test_safe_error_redacts_provider_messages(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Provider messages can echo prompts or keys, so logging them is opt-in.
+
+    Guards CodeQL ``py/clear-text-logging-sensitive-data``: the helper is the only
+    sanctioned way to put an exception into a log line or a Silver row.
+    """
+    from insilico_trial_mas.logging_utils import safe_error
+
+    secret = "sk-live-abcdef123456"
+    error = RuntimeError(f"AccessDenied for key {secret}")
+
+    monkeypatch.delenv("INSILICO_DEBUG_EXCEPTIONS", raising=False)
+    redacted = safe_error(error)
+    assert "RuntimeError" in redacted
+    assert secret not in redacted
+    assert "INSILICO_DEBUG_EXCEPTIONS" in redacted, "the escape hatch must be discoverable"
+
+    monkeypatch.setenv("INSILICO_DEBUG_EXCEPTIONS", "1")
+    assert secret in safe_error(error), "explicit opt-in restores the full message"
+    assert secret in safe_error(error, include_message=True)
+
+
+def test_patient_agent_does_not_log_provider_text(tmp_path) -> None:
+    """The persona agent must store a redacted summary, not the raw provider error."""
+    import logging
+
+    from insilico_trial_mas.logging_utils import get_logger
+
+    source = (REPO_ROOT / "src" / "insilico_trial_mas" / "agents" / "patient_agent.py").read_text(encoding="utf-8")
+    assert "safe_error(exc)" in source
+    assert "{exc}" not in source, "raw exception interpolation would leak provider text"
+    logger = get_logger("agents.patient")
+    assert isinstance(logger, logging.Logger)
+    del tmp_path

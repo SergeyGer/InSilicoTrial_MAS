@@ -18,6 +18,7 @@ silently produce a trial where 90% of patients have a serious adverse event.
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -87,7 +88,9 @@ def calibrate(config_path: str, protocol_path: str | None, patients: int) -> dic
                 "mean_sbp_change": round(summary.mean_sbp_change, 2),
                 "sd_sbp_change": round(summary.sd_sbp_change, 2),
                 "responder_rate": round(summary.responder_rate, 3),
-                "mean_alt_ratio": round(summary.mean_alt_ratio, 3) if summary.mean_alt_ratio == summary.mean_alt_ratio else None,
+                "mean_alt_ratio": (
+                    None if math.isnan(summary.mean_alt_ratio) else round(summary.mean_alt_ratio, 3)
+                ),
             }
             for summary in analysis.arm_summaries
         ]

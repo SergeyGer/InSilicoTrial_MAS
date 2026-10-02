@@ -51,6 +51,26 @@ account, no API keys and no internet.
 
 ---
 
+<details>
+<summary><strong>The name, for non-specialists</strong></summary>
+
+**InSilicoTrial MAS** is three ideas joined together:
+
+| Part | Meaning |
+| --- | --- |
+| ***In silico*** | Latin for "in silicon". Running an experiment on a computer through simulation and modelling — as opposed to *in vivo* (in a living organism) and *in vitro* (in a test tube). |
+| ***Trial*** | A clinical trial: a study of a drug or a treatment protocol. |
+| ***MAS*** | **M**ulti-**A**gent **S**ystem — an architecture in which the work is done not by one algorithm but by a network of autonomous AI agents. Here they are patient agents, a protocol agent and a biostatistician agent. |
+
+Read together: **"a multi-agent system for computer-simulated clinical trials."**
+
+In this project the three words map directly onto the three agent types: the
+Protocol Agent runs the study, each Patient Persona Agent is one simulated
+participant, and the Biostatistician Agent reads the results.
+
+</details>
+
+
 ## Technology stack
 
 | Layer | Technologies | Role in this project |
@@ -324,6 +344,55 @@ Medallion architecture, identical on Delta Lake and on the local store:
 
 Full column contracts, JSON payload shapes and the CDISC-inspired exports are in
 [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+
+
+---
+
+## Roadmap
+
+The platform is deliberately layered, so most of the work below can be done
+without touching the others: new science goes into `ml/` and `agents/`, new scale
+into `engine/`, new artefacts into `reporting/` and `ui/`. Items marked
+**good first issue** are scoped for a new contributor.
+
+### Next
+
+| Initiative | What it unlocks | Entry point |
+| --- | --- | --- |
+| Migrate to the AWS Terraform provider 6.x | Removes the last pinned major dependency ([issue #9](https://github.com/SergeyGer/InSilicoTrial_MAS/issues/9)) | `terraform/versions.tf` |
+| Sparse PK sampling per patient | Models real trials, where a patient gives 3-5 samples instead of a full curve; feeds exposure-response analysis | `ml/pk_pd.py` |
+| Baseline-adjusted (ANCOVA) endpoint analysis | The standard primary analysis in modern protocols; more power than change-from-baseline | `agents/biostatistician_agent.py` |
+| Dropout and missing-data mechanisms (MCAR/MAR) with sensitivity analysis | Stops completers-only results from flattering a dose | `agents/patient_agent.py` |
+| Subgroup filters in the dashboard (age band, ancestry, comorbidity) | Answers "does this dose work in the elderly?" without a new run | `ui/data.py`, `ui/dashboard.py` |
+| **good first issue:** Kaplan-Meier plot for time-to-first-event | The safety readout clinicians expect next to the CTCAE table | `stats/estimators.py`, `reporting/` |
+
+### Mid term
+
+| Initiative | What it unlocks | Entry point |
+| --- | --- | --- |
+| Alternative PK structures (two-compartment, target-mediated drug disposition) | Biologics and drugs with distribution phases, behind the same model protocol | `ml/physiology.py` (implement `PhysiologyModel`) |
+| Bayesian dose escalation (CRM / BOIN) driven by the Protocol Agent | Adaptive phase I designs instead of a fixed escalation ladder | `agents/protocol_agent.py` |
+| Partial adherence: missed doses, interruptions, re-starts | Adherence becomes a modelled behaviour rather than a binary stop | `agents/patient_agent.py` |
+| Time-to-event and recurrent-event endpoints (Cox, negative binomial) | Oncology and chronic-disease readouts | `stats/`, `agents/biostatistician_agent.py` |
+| External / virtual control arms with propensity weighting | Shrinks control groups using historical trials | new `cohort/borrowing.py` |
+| LLM evaluation harness: prompt A/B, structured tool calling, cost governor | Turns the persona layer from a demo feature into a governed component | `llm/`, `tests/` |
+
+### Long term
+
+| Initiative | What it unlocks | Entry point |
+| --- | --- | --- |
+| Delta Live Tables / Lakeflow pipeline for the medallion flow | Declarative quality expectations and lineage on every layer | `pipeline.py`, `databricks.yml` |
+| Photon, Spark Connect and serverless jobs; GPU inference for the ML head | Million-agent cohorts at lower cost per simulated patient-epoch | `engine/spark_runner.py` |
+| Lakehouse Monitoring on Silver (drift, freshness, completeness) | Catches a broken prior or an upstream schema change before a readout | `terraform/`, notebooks |
+| Signed run manifests (Sigstore/cosign) and a WORM audit export | Tamper-evident reproducibility evidence for auditors | `pipeline.py`, `governance/` |
+| 21 CFR Part 11-style audit trail, e-signature, full CDISC SDTM/ADaM + `define.xml`, IQ/OQ/PQ pack | Moves the platform from decision support towards a regulated workflow | `reporting/cdisc.py`, `docs/` |
+| Model governance: retraining triggers, prior drift detection, model cards | Keeps the learned head trustworthy release over release | `ml/training.py`, `ml/registry.py` |
+| Interoperability: FHIR/OMOP ingestion to calibrate priors, site-level data exchange | Replaces illustrative priors with a customer's own real-world data | `cohort/generator.py`, `resources/` |
+
+Ideas and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). If you
+want to propose a protocol rather than code, open a
+[discussion](https://github.com/SergeyGer/InSilicoTrial_MAS/discussions) with the
+dose levels, endpoints and stopping rules you have in mind.
 
 ---
 

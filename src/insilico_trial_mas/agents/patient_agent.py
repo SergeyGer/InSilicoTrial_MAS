@@ -30,7 +30,7 @@ from typing import Any
 
 from ..llm.base import LLMRequest, LLMResponse
 from ..llm.prompts import build_patient_prompt, parse_symptom_response
-from ..logging_utils import get_logger
+from ..logging_utils import safe_error
 from ..ml.physiology import PhysiologyPrediction, sample_adverse_events
 from ..ml.pk_pd import ExposureMetrics, derive_pk_parameters, exposure_for_epoch
 from ..reproducibility import rng_for, stable_hash
@@ -42,8 +42,6 @@ from ..schemas import (
     SymptomReport,
 )
 from .base import AgentContext, BaseAgent, utc_now_iso
-
-logger = get_logger("agents.patient")
 
 MAX_LLM_SYMPTOMS = 5
 #: Hard budget: personas narrate at most this many epochs each, whatever the mode.
@@ -340,8 +338,15 @@ class PatientPersonaAgent(BaseAgent):
         try:
             response = await self.runtime.llm.acomplete(request)
         except Exception as exc:
-            self.log.warning(f"LLM narration failed for {self.profile.patient_id} epoch {observation.epoch}: {exc}")
-            return Narration(symptoms=[], response=None, error=f"{type(exc).__name__}: {exc}")
+            # Never interpolate the provider message: it can echo the prompt or the
+            # API key (CodeQL py/clear-text-logging-sensitive-data). The Silver row
+            # keeps the same redacted summary so the data-quality audit still counts
+            # failures without copying provider text into the lake.
+            summary = safe_error(exc)
+            self.log.warning(
+                f"LLM narration failed for {self.profile.patient_id} epoch {observation.epoch}: {summary}"
+            )
+            return Narration(symptoms=[], response=None, error=summary)
         # Keep the prompt hash with the response so the Silver row can be traced
         # back to the exact prompt that produced it.
         response.raw.setdefault("prompt_hash", prompt.prompt_hash)
@@ -381,7 +386,7 @@ class PatientPersonaAgent(BaseAgent):
                 error=error,
             )
         except Exception as exc:
-            self.log.debug(f"could not record trace span: {exc}")
+            self.log.debug(f"could not record trace span: {safe_error(exc)}")
 
     def _apply_narration(self, observation: PatientStateObservation, narration: Narration) -> None:
         """Merge the qualitative narration into the structured observation."""
