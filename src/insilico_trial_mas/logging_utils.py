@@ -8,6 +8,7 @@ handler for the driver process.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -99,6 +100,18 @@ def error_kind(exc: BaseException) -> str:
         if isinstance(exc, exception_type):
             return label
     return "unexpected-error"
+
+
+def anonymised_ref(value: str, *, length: int = 8) -> str:
+    """Short, stable digest of an identifier, for log lines.
+
+    A patient identifier is private health information: a log line, a Delta table or
+    a traceback pasted into an issue that carries one turns an operational log into
+    a patient record. The digest keeps a failure traceable to one agent without
+    copying the identifier, using the same sha256 scheme as the reproducibility
+    layer, so it can be correlated with a run manifest when needed.
+    """
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:length]
 
 
 def debug_error_text(exc: BaseException) -> str:

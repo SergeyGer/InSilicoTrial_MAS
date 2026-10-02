@@ -212,6 +212,18 @@ def test_error_kind_never_returns_provider_text(monkeypatch: pytest.MonkeyPatch)
     assert secret in debug_error_text(error)
 
 
+def test_anonymised_ref_keeps_identifiers_out_of_logs() -> None:
+    """Patient identifiers are private: logs carry a stable digest instead."""
+    from insilico_trial_mas.logging_utils import anonymised_ref
+
+    patient_id = "PT-000123"
+    reference = anonymised_ref(patient_id)
+    assert patient_id not in reference
+    assert len(reference) == 8 and reference.isalnum()
+    assert anonymised_ref(patient_id) == reference, "the digest must be stable for correlation"
+    assert anonymised_ref("PT-000124") != reference
+
+
 def test_patient_agent_does_not_log_provider_text() -> None:
     """The persona agent must log a label and store it in ``llm_error``."""
     source = (REPO_ROOT / "src" / "insilico_trial_mas" / "agents" / "patient_agent.py").read_text(encoding="utf-8")

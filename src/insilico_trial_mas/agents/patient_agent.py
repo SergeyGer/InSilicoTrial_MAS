@@ -30,7 +30,7 @@ from typing import Any
 
 from ..llm.base import LLMRequest, LLMResponse
 from ..llm.prompts import build_patient_prompt, parse_symptom_response
-from ..logging_utils import error_kind
+from ..logging_utils import anonymised_ref, error_kind
 from ..ml.physiology import PhysiologyPrediction, sample_adverse_events
 from ..ml.pk_pd import ExposureMetrics, derive_pk_parameters, exposure_for_epoch
 from ..reproducibility import rng_for, stable_hash
@@ -342,8 +342,12 @@ class PatientPersonaAgent(BaseAgent):
             # echo the prompt or the API key (CodeQL py/clear-text-logging-sensitive-data).
             # The data-quality audit only needs to know *that* narration failed and how.
             kind = error_kind(exc)
+            # The identifier itself is not logged: a digest keeps the failure
+            # traceable to one agent without writing patient-level data into the log
+            # stream (CodeQL py/clear-text-logging-sensitive-data).
             self.log.warning(
-                f"LLM narration failed for {self.profile.patient_id} epoch {observation.epoch}: {kind}"
+                f"LLM narration failed for patient {anonymised_ref(self.profile.patient_id)} "
+                f"at epoch {observation.epoch}: {kind}"
             )
             return Narration(symptoms=[], response=None, error=kind)
         # Keep the prompt hash with the response so the Silver row can be traced
