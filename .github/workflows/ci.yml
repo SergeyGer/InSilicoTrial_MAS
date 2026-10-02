@@ -55,7 +55,7 @@ jobs:
         run: pytest -q -m "not spark" --cov=insilico_trial_mas --cov-report=xml
       - name: Upload coverage
         if: matrix.python-version == '3.11'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.xml
@@ -102,7 +102,7 @@ jobs:
           print(f"dashboard ok: {dashboard} ({len(html) // 1024} KB)")
           PY
       - name: Upload the dashboard artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: simulation-dashboard
           path: artifacts/ci-demo/*/report/dashboard.html
