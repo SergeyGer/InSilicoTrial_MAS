@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 760" width="100%" height="auto" role="img" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <title>InSilicoTrial MAS dashboard wiring diagram</title>
+  <desc>Wireframe of the six-screen readout dashboard: sticky header, tab bar, KPI row, primary endpoint and responder charts, forest plot, CONSORT disposition, safety signals, and the patient explorer.</desc>
+
+  <defs>
+    <style>
+      .bg { fill: #f6f8fa; }
+      .surface { fill: #ffffff; stroke: #d7dee6; stroke-width: 1; }
+      .hairline { stroke: #e5eaef; stroke-width: 1; }
+      .bar { fill: #0b6e99; }
+      .bar-soft { fill: #7fb3cc; }
+      .band { fill: #0b6e99; opacity: 0.14; }
+      .crit { fill: #a8321f; }
+      .warn { fill: #d9a441; }
+      .good { fill: #1c7c54; }
+      .t { fill: #5a6b7b; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .h { fill: #101c28; font-size: 15px; font-weight: 600; }
+      .h2 { fill: #101c28; font-size: 12.5px; font-weight: 600; }
+      .s { fill: #8798a8; font-size: 11px; }
+      .note { fill: #5a6b7b; font-size: 11.5px; }
+      .accent { fill: #0b6e99; font-size: 11.5px; font-weight: 600; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1240" height="760" rx="10"/>
+
+  <!-- browser chrome / header -->
+  <rect x="20" y="20" width="1200" height="52" rx="8" class="surface"/>
+  <rect x="36" y="36" width="20" height="20" rx="6" fill="#0b6e99"/>
+  <text x="66" y="51" class="h">InSilicoTrial MAS</text>
+  <text x="196" y="51" class="s">/ INS-HTN-201 readout</text>
+  <rect x="880" y="34" width="120" height="24" rx="12" fill="#e3f0f7" stroke="#7fb3cc"/>
+  <text x="898" y="50" class="accent">run RUN-…-F761B3</text>
+  <rect x="1010" y="34" width="90" height="24" rx="12" fill="#f2f5f8" stroke="#d7dee6"/>
+  <text x="1030" y="50" class="s">engine: local</text>
+  <rect x="1110" y="34" width="94" height="24" rx="8" fill="#fff" stroke="#bcc7d3"/>
+  <text x="1130" y="50" class="s">Print / PDF</text>
+
+  <!-- tabs -->
+  <line x1="20" y1="88" x2="1220" y2="88" class="hairline"/>
+  <text x="40" y="110" class="accent">Overview</text>
+  <rect x="34" y="116" width="62" height="2" fill="#0b6e99"/>
+  <text x="126" y="110" class="s">Efficacy</text>
+  <text x="200" y="110" class="s">Safety</text>
+  <text x="268" y="110" class="s">Patients</text>
+  <text x="344" y="110" class="s">Reproducibility</text>
+  <text x="456" y="110" class="s">Lineage &amp; traces</text>
+
+  <!-- KPI row -->
+  <g>
+    <rect x="20" y="134" width="187" height="74" rx="8" class="surface"/>
+    <text x="36" y="156" class="t">Patients</text>
+    <text x="36" y="184" class="h" font-size="22">287</text>
+    <text x="96" y="184" class="s">3 arms</text>
+
+    <rect x="217" y="134" width="187" height="74" rx="8" class="surface"/>
+    <text x="233" y="156" class="t">Primary effect</text>
+    <text x="233" y="184" class="h" font-size="22" fill="#1c7c54">-11.2</text>
+    <text x="300" y="184" class="s">mmHg</text>
+
+    <rect x="414" y="134" width="187" height="74" rx="8" class="surface"/>
+    <text x="430" y="156" class="t">Responder rate</text>
+    <text x="430" y="184" class="h" font-size="22">64.0%</text>
+
+    <rect x="611" y="134" width="187" height="74" rx="8" class="surface"/>
+    <text x="627" y="156" class="t">Adverse events</text>
+    <text x="627" y="184" class="h" font-size="22">95</text>
+
+    <rect x="808" y="134" width="187" height="74" rx="8" class="surface"/>
+    <text x="824" y="156" class="t">Grade ≥ 3</text>
+    <text x="824" y="184" class="h" font-size="22" fill="#a2701a">3.6%</text>
+
+    <rect x="1005" y="134" width="199" height="74" rx="8" class="surface"/>
+    <text x="1021" y="156" class="t">Safety alerts</text>
+    <text x="1021" y="184" class="h" font-size="22">0</text>
+  </g>
+
+  <!-- primary endpoint chart -->
+  <rect x="20" y="224" width="592" height="248" rx="8" class="surface"/>
+  <text x="38" y="250" class="h2">Primary endpoint by arm</text>
+  <text x="38" y="268" class="s">mean change from baseline with 95% CI</text>
+  <line x1="70" y1="300" x2="592" y2="300" class="hairline"/>
+  <line x1="70" y1="350" x2="592" y2="350" class="hairline"/>
+  <line x1="70" y1="400" x2="592" y2="400" class="hairline"/>
+  <line x1="70" y1="430" x2="592" y2="430" stroke="#bcc7d3" stroke-dasharray="4 3"/>
+  <rect class="bar" x="120" y="404" width="70" height="26" rx="3"/>
+  <rect class="bar" x="280" y="360" width="70" height="70" rx="3"/>
+  <rect class="bar" x="440" y="318" width="70" height="112" rx="3"/>
+  <line x1="155" y1="398" x2="155" y2="436" stroke="#5a6b7b"/>
+  <line x1="315" y1="352" x2="315" y2="436" stroke="#5a6b7b"/>
+  <line x1="475" y1="308" x2="475" y2="436" stroke="#5a6b7b"/>
+  <text x="155" y="455" class="s" text-anchor="middle">placebo</text>
+  <text x="315" y="455" class="s" text-anchor="middle">low dose</text>
+  <text x="475" y="455" class="s" text-anchor="middle">high dose</text>
+
+  <!-- responder chart -->
+  <rect x="628" y="224" width="592" height="248" rx="8" class="surface"/>
+  <text x="646" y="250" class="h2">Responder rate</text>
+  <text x="646" y="268" class="s">share of patients meeting the responder definition</text>
+  <line x1="678" y1="300" x2="1200" y2="300" class="hairline"/>
+  <line x1="678" y1="360" x2="1200" y2="360" class="hairline"/>
+  <line x1="678" y1="420" x2="1200" y2="420" class="hairline"/>
+  <rect class="bar-soft" x="730" y="424" width="80" height="6" rx="3"/>
+  <rect class="bar" x="900" y="386" width="80" height="44" rx="3"/>
+  <rect class="bar" x="1070" y="322" width="80" height="108" rx="3"/>
+  <text x="770" y="455" class="s" text-anchor="middle">placebo</text>
+  <text x="940" y="455" class="s" text-anchor="middle">low dose</text>
+  <text x="1110" y="455" class="s" text-anchor="middle">high dose</text>
+
+  <!-- forest plot -->
+  <rect x="20" y="488" width="592" height="252" rx="8" class="surface"/>
+  <text x="38" y="514" class="h2">Treatment comparisons</text>
+  <text x="38" y="532" class="s">effect vs control with 95% CI, no-effect reference</text>
+  <line x1="380" y1="546" x2="380" y2="722" stroke="#bcc7d3" stroke-dasharray="4 3"/>
+  <g stroke-width="2">
+    <line x1="330" y1="562" x2="410" y2="562" stroke="#0b6e99"/>
+    <line x1="250" y1="592" x2="330" y2="592" stroke="#0b6e99"/>
+    <line x1="300" y1="622" x2="392" y2="622" stroke="#7a5ea8"/>
+    <line x1="220" y1="652" x2="330" y2="652" stroke="#7a5ea8"/>
+    <line x1="392" y1="682" x2="470" y2="682" stroke="#1c7c54"/>
+  </g>
+  <g>
+    <circle cx="370" cy="562" r="5" fill="#0b6e99"/>
+    <circle cx="290" cy="592" r="5" fill="#0b6e99"/>
+    <circle cx="346" cy="622" r="5" fill="#7a5ea8"/>
+    <circle cx="275" cy="652" r="5" fill="#7a5ea8"/>
+    <circle cx="431" cy="682" r="5" fill="#1c7c54"/>
+  </g>
+  <text x="150" y="566" class="s" text-anchor="end">sbp_change · low dose</text>
+  <text x="150" y="596" class="s" text-anchor="end">sbp_change · high dose</text>
+  <text x="150" y="626" class="s" text-anchor="end">dbp_change · low dose</text>
+  <text x="150" y="656" class="s" text-anchor="end">dbp_change · high dose</text>
+  <text x="150" y="686" class="s" text-anchor="end">alt_elevation · high dose</text>
+
+  <!-- CONSORT + alerts -->
+  <rect x="628" y="488" width="592" height="118" rx="8" class="surface"/>
+  <text x="646" y="514" class="h2">Participant disposition</text>
+  <g class="s">
+    <text x="646" y="540">Screened</text><text x="1180" y="540" text-anchor="end">400</text>
+    <text x="646" y="562">Screen failures</text><text x="1180" y="562" text-anchor="end">71</text>
+    <text x="646" y="584">Completed all epochs</text><text x="1180" y="584" text-anchor="end">317</text>
+  </g>
+
+  <rect x="628" y="618" width="592" height="122" rx="8" class="surface"/>
+  <text x="646" y="644" class="h2">Safety signals for DSMB review</text>
+  <rect x="646" y="658" width="470" height="30" rx="6" fill="#e4f3ec" stroke="#1c7c54"/>
+  <text x="660" y="678" class="note">No signal crossed the protocol alerting thresholds.</text>
+  <text x="646" y="712" class="s">Absence of a signal in a synthetic cohort is not evidence of safety.</text>
+
+  <!-- annotations -->
+  <text x="20" y="24" class="t">Dashboard anatomy - one self-contained HTML file</text>
+</svg>

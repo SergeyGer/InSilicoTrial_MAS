@@ -1,0 +1,115 @@
+name: Release
+
+# Tag a commit on main (`git tag v1.0.0 && git push origin v1.0.0`) and this
+# workflow builds the distribution, verifies it installs cleanly, and publishes a
+# GitHub Release with the artefacts attached.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  PYTHONPATH: src
+  INSILICO_LOG_LEVEL: WARNING
+
+jobs:
+  build:
+    name: Build and verify distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Install the built wheel in a clean environment
+        run: |
+          python -m venv /tmp/verify
+          /tmp/verify/bin/python -m pip install --upgrade pip
+          /tmp/verify/bin/python -m pip install dist/*.whl
+          /tmp/verify/bin/insilico-trial --version
+          /tmp/verify/bin/insilico-trial env-check --json > /tmp/env.json
+          /tmp/verify/bin/python - <<'PY'
+          import json, pathlib
+          payload = json.loads(pathlib.Path("/tmp/env.json").read_text())
+          assert payload["recommended_backend"] in {"sequential", "local", "spark"}
+          print("wheel installs and runs:", payload["python_version"], payload["recommended_backend"])
+          PY
+
+      - name: Smoke-test the installed package end to end
+        run: |
+          /tmp/verify/bin/insilico-trial demo --patients 120 --epochs 3 --output-dir /tmp/verify-demo --json > /tmp/demo.json
+          /tmp/verify/bin/python - <<'PY'
+          import json, pathlib
+          payload = json.loads(pathlib.Path("/tmp/demo.json").read_text())
+          dashboard = pathlib.Path(payload["dashboard"])
+          assert dashboard.exists(), "the installed wheel must produce a dashboard"
+          report = pathlib.Path(payload["report"]["markdown"])
+          assert "Executive summary" in report.read_text(encoding="utf-8")
+          print(f"demo ok: {payload['patients']} patients, dashboard {dashboard.stat().st_size // 1024} KB")
+          PY
+
+      - name: Verify the committed diagrams and community files are current
+        run: |
+          python scripts/render_architecture.py --check
+          python scripts/render_social_preview.py --check
+          python scripts/render_ui_previews.py --check
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distribution
+          path: dist/*
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: distribution
+          path: dist
+
+      - name: Extract the changelog section for this tag
+        id: notes
+        run: |
+          python - <<'PY'
+          import pathlib, re, os
+          tag = os.environ.get("GITHUB_REF_NAME", "").lstrip("v")
+          text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = re.compile(rf"^## \[{re.escape(tag)}\].*?$(.*?)(?=^## \[|\Z)", re.M | re.S)
+          match = pattern.search(text)
+          body = match.group(1).strip() if match else "See CHANGELOG.md for details."
+          pathlib.Path("release-notes.md").write_text(body + "\n", encoding="utf-8")
+          print(body[:400])
+          PY
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "InSilicoTrial MAS ${GITHUB_REF_NAME}" \
+            --notes-file release-notes.md \
+            dist/*

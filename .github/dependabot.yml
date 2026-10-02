@@ -1,0 +1,67 @@
+# Dependabot configuration.
+#
+# Weekly, grouped and conventional: minor/patch bumps arrive as one reviewable PR per
+# ecosystem, majors arrive individually so they can be scheduled against a test run
+# (`make check`, `make test-spark`) rather than merged blindly.
+version: 2
+
+updates:
+  # Core runtime, optional extras and dev tooling: pyproject.toml, requirements.txt,
+  # requirements-dev.txt.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    assignees:
+      - "SergeyGer"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      python-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  # Actions pinned in .github/workflows/ (CI and CodeQL).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    assignees:
+      - "SergeyGer"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci(deps):"
+
+  # Terraform providers used by the Unity Catalog / AWS storage module.
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    assignees:
+      - "SergeyGer"
+    labels:
+      - "dependencies"
+      - "terraform"
+    commit-message:
+      prefix: "chore(deps):"
+    groups:
+      terraform-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

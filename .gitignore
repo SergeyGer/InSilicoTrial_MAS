@@ -1,0 +1,57 @@
+# --- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.python-version
+
+# --- Test / lint caches ---------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+junit.xml
+
+# --- Local toolchain (portable JRE used for local Spark runs) -------------
+.toolchain/
+
+# --- Simulation artefacts -------------------------------------------------
+artifacts/
+data/raw/
+data/bronze/
+data/silver/
+data/gold/
+reports/
+*.parquet
+*.delta/
+spark-warehouse/
+metastore_db/
+derby.log
+mlruns/
+mlflow.db
+
+# --- UI previews -----------------------------------------------------------
+# docs/studio-preview.html and docs/dashboard-preview.html are committed on
+# purpose (regenerate with `make architecture`); per-run dashboards are not.
+dashboard.html
+
+# --- Secrets / infrastructure state --------------------------------------
+.env
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+crash.log
+
+# --- Notebooks / editors --------------------------------------------------
+.ipynb_checkpoints/
+.databricks/
+.vscode/*.log
+*.swp
+.DS_Store

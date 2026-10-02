@@ -1,0 +1,73 @@
+# ---------------------------------------------------------------------------
+# Databricks Community Edition profile (single-node driver).
+#
+# Community Edition has no worker pools, so the platform switches paradigm:
+# the driver runs the cohort through local multiprocessing workers, each one
+# executing the *same* agent code with vectorised Arrow batches. Everything else
+# (Delta time travel, MLflow, the report) behaves identically.
+# ---------------------------------------------------------------------------
+protocol_path: conf/trial_protocol_demo.yaml
+
+n_patients: 10000
+n_cohorts: 20
+seed: 20240517
+epochs: 0
+output_dir: /dbfs/insilico-trial-ce/artifacts
+
+llm_mode: triggered
+llm_sample_rate: 0.02
+llm_trigger_grade: 3
+include_baseline_epoch: true
+export_cdisc: false       # keep the driver's disk usage low on CE
+report_formats: [markdown, json]
+
+storage:
+  backend: delta
+  catalog: hive_metastore    # Community Edition uses the Hive metastore, not Unity Catalog
+  bronze_schema: insilico_bronze
+  silver_schema: insilico_silver
+  gold_schema: insilico_gold
+  local_root: /tmp/insilico-lake
+  root_uri: ""
+  delta_partition_by: [arm_id]
+  time_travel_versions_kept: 16
+
+engine:
+  backend: local           # driver-side multiprocessing, not a Spark job
+  single_node: true
+  max_workers: 0           # 0 -> os.cpu_count()
+  batch_size: 128          # CE drivers have limited memory
+  partition_mode: balanced
+  cohorts_per_partition: 1
+  spark_max_records_per_batch: 512
+
+llm:
+  provider: offline        # no Bedrock credentials on Community Edition
+  temperature: 0.2
+  max_tokens: 512
+  timeout_seconds: 30
+  max_retries: 2
+  requests_per_second: 4
+  burst: 8
+  max_concurrency: 8
+  cache_enabled: true
+  cache_path: /tmp/insilico-llm-cache.jsonl
+
+ml:
+  backend: ridge
+  model_path: /dbfs/insilico-trial-ce/models/physiology_model.json
+  auto_train_if_missing: true
+  training_rows: 6000
+  ridge_alpha: 1.0
+  use_mlflow_registry: false
+  mlflow_model_name: insilico_physiology
+  mlflow_stage: latest
+
+tracking:
+  enabled: true
+  tracking_uri: databricks
+  experiment_name: /Users/me@example.com/insilico_trial_mas_ce
+  log_artifacts: true
+  trace_path: /tmp/insilico-traces.jsonl
+  register_model: false
+  strict: false

@@ -1,0 +1,72 @@
+# ---------------------------------------------------------------------------
+# Local / laptop / CI profile: multiprocessing engine, Parquet lake, offline LLM.
+# ---------------------------------------------------------------------------
+protocol_path: conf/trial_protocol_demo.yaml
+
+n_patients: 1000
+n_cohorts: 8
+seed: 20240517
+epochs: 0            # 0 -> use the protocol value
+output_dir: artifacts/local
+
+# LLM persona policy: narrate every epoch with a grade >= 2 event plus 5% of the
+# remaining epochs. Keeps a 10,000-agent run affordable while preserving a
+# representative qualitative sample.
+llm_mode: triggered
+llm_sample_rate: 0.05
+llm_trigger_grade: 2
+include_baseline_epoch: true
+export_cdisc: true
+report_formats: [markdown, html, json]
+
+storage:
+  backend: local
+  local_root: artifacts/local/lake
+  catalog: trial_simulations_prod
+  bronze_schema: bronze
+  silver_schema: silver
+  gold_schema: gold
+  delta_partition_by: [arm_id]
+  time_travel_versions_kept: 32
+
+engine:
+  backend: auto          # auto -> spark if available, else local multiprocessing
+  max_workers: 0         # 0 -> os.cpu_count()
+  batch_size: 256
+  partition_mode: cohort
+  cohorts_per_partition: 1
+  fail_fast: false
+  single_node: false
+
+llm:
+  provider: offline      # offline | mock | bedrock | openai | langchain
+  model: ""
+  temperature: 0.2
+  max_tokens: 512
+  timeout_seconds: 30
+  max_retries: 3
+  requests_per_second: 8
+  burst: 16
+  max_concurrency: 32
+  cache_enabled: true
+  cache_path: artifacts/local/llm_cache.jsonl
+
+ml:
+  backend: auto          # auto | mechanistic | ridge | xgboost
+  model_path: artifacts/models/physiology_model.json
+  auto_train_if_missing: true
+  training_rows: 8000
+  training_seed: 7
+  ridge_alpha: 1.0
+  use_mlflow_registry: false
+  mlflow_model_name: insilico_physiology
+  mlflow_stage: latest
+
+tracking:
+  enabled: true
+  tracking_uri: ""
+  experiment_name: /Shared/insilico_trial_mas
+  log_artifacts: true
+  trace_path: artifacts/local/traces/llm_traces.jsonl
+  register_model: false
+  strict: false

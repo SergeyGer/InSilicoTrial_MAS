@@ -1,0 +1,40 @@
+{
+  "folders": [
+    {
+      "name": "insilico-trial-mas",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["tests"],
+    "python.analysis.extraPaths": ["${workspaceFolder}/src"],
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.egg-info": true,
+      ".toolchain": true
+    },
+    "jupyter.interactiveWindow.cellMarker.codeRegex": "^# COMMAND ----------|^# Databricks notebook source|^(#\\s*%%|#\\s*\\<codecell\\>|#\\s*In\\[\\d*?\\]|#\\s*In\\[ \\])",
+    "jupyter.interactiveWindow.cellMarker.default": "# COMMAND ----------"
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "charliermarsh.ruff",
+      "ms-toolsai.jupyter",
+      "databricks.databricks",
+      "hashicorp.terraform",
+      "redhat.vscode-yaml"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": []
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": []
+  }
+}

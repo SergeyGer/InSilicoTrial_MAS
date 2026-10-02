@@ -1,0 +1,132 @@
+name: Bug report
+description: Report a defect in the simulation pipeline, an execution engine, storage, the CLI, the dashboard/Studio, the LLM layer or the IaC.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. A reproducible report is fixed far faster than a described one.
+
+        **Never paste real patient data, credentials, tokens or connection strings.** This
+        project only processes synthetic cohorts, so every run can be reproduced from a
+        configuration file and a seed.
+
+        Before submitting, please:
+        - run `insilico-trial env-check` and keep its output;
+        - skim `docs/ETHICS_AND_LIMITATIONS.md` — some surprising numbers are documented
+          model limitations, not defects;
+        - search the existing issues and GitHub Discussions first.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the observed behaviour, including the full traceback if one was raised.
+      placeholder: |
+        `insilico-trial simulate --engine local` wrote an empty silver/patient_states table
+        for 2 of 3 runs, and the report says "0 patients evaluated".
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behaviour
+    attributes:
+      label: What did you expect to happen?
+      description: What should the pipeline, engine or UI have done instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction command
+      description: |
+        Give the exact command, configuration file and seed. The smallest run that still
+        shows the defect is the most useful one. If you have no protocol of your own, start
+        from `insilico-trial demo --patients 200 --epochs 3` (fast, offline, no credentials)
+        or `make demo` (300 patients, 6 epochs, writes `artifacts/demo/`).
+      placeholder: |
+        insilico-trial demo --patients 200 --epochs 3
+        # or
+        make demo
+        # or, for a configured run
+        insilico-trial simulate --config conf/simulation_local.yaml --patients 2000 \
+          --engine local --seed 7 --output-dir artifacts/bug-repro
+      render: bash
+    validations:
+      required: true
+
+  - type: dropdown
+    id: engine-backend
+    attributes:
+      label: Execution engine
+      description: |
+        Which backend produced the problem? `insilico-trial env-check` prints the
+        recommended engine, and the run manifest records the resolved one.
+      options:
+        - sequential
+        - local (process pool + asyncio)
+        - spark (applyInPandas / mapInPandas)
+        - auto (let the factory choose)
+        - not engine-related (CLI, UI, IaC, docs)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: llm-provider
+    attributes:
+      label: Was the offline LLM provider used?
+      description: |
+        The default provider is `offline` (deterministic, no network, no credentials). A
+        real provider (Bedrock, OpenAI, any LangChain chat model) changes narrative text
+        and can change latency and cache behaviour.
+      options:
+        - "Yes - offline provider (default)"
+        - "No - a real provider (Bedrock / OpenAI / LangChain)"
+        - "LLM narration was disabled (llm_mode: off)"
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      description: Output of `python -V`. Supported range is 3.10 to 3.12.
+      placeholder: "3.11.9"
+    validations:
+      required: true
+
+  - type: textarea
+    id: env-check
+    attributes:
+      label: "`insilico-trial env-check` output"
+      description: |
+        Paste the checklist (or the JSON form: `insilico-trial env-check --json`). It
+        records Python, platform, CPU/memory, JVM and PySpark availability and the
+        recommended backend.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: |
+        Optional: package version (`insilico-trial --version`), git revision from
+        `run_manifest.json`, the relevant part of `conf/`, storage backend, and whether
+        `make verify-repro` reproduces the issue.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This report contains no real patient data, no credentials and no secrets.
+          required: true
+        - label: I have searched the existing issues and GitHub Discussions for this problem.
+          required: true

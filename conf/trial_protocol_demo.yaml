@@ -1,0 +1,243 @@
+# ---------------------------------------------------------------------------
+# Demo protocol: Phase II dose-finding study in mild-to-moderate hypertension.
+#
+# Illustrative only. Drug parameters are synthetic and must not be interpreted
+# as pharmacological facts about any real compound.
+# ---------------------------------------------------------------------------
+protocol_id: INS-HTN-201
+title: "Randomised, double-blind, placebo-controlled dose-finding study of INS-201 in mild-to-moderate hypertension"
+phase: PHASE_II
+therapeutic_area: cardiology
+indication: mild-to-moderate essential hypertension
+design: parallel
+epochs: 8
+epoch_duration_hours: 12
+seed: 20240517
+
+arms:
+  - arm_id: placebo
+    label: Placebo
+    dose_mg: 0
+    allocation_weight: 0.25
+    is_control: true
+  - arm_id: low_dose
+    label: INS-201 50 mg BID
+    dose_mg: 50
+    allocation_weight: 0.375
+  - arm_id: high_dose
+    label: INS-201 150 mg BID
+    dose_mg: 150
+    allocation_weight: 0.375
+    titration:
+      start_epoch: 3
+      step_mg: 25
+      max_dose_mg: 200
+
+drug:
+  drug_id: INS-201
+  name: INS-201 (investigational dual ACE/NEP inhibitor, synthetic)
+  drug_class: small_molecule
+  route: oral
+  bioavailability: 0.72
+  half_life_h: 11.5
+  volume_of_distribution_l_per_kg: 0.65
+  clearance_ml_min_per_kg: 1.35
+  ka_per_h: 1.1
+  ec50_mg_l: 0.85
+  hill: 1.4
+  renal_fraction: 0.35
+  hepatic_fraction: 0.45
+  emax:
+    sbp_mmhg: -7.5
+    dbp_mmhg: -5.0
+    hr_bpm: 2.5
+    qtc_ms: 9.0
+    alt_multiplier: 1.7
+  ae_models:
+  - term: cough
+    soc: Respiratory, thoracic and mediastinal disorders
+    intercept: -5.815
+    exposure_slope: 1.481
+    coefficients:
+      female: 0.45
+      age_z: 0.1
+    grade_distribution:
+    - 0.86
+    - 0.125
+    - 0.015
+    - 0.0
+    - 0.0
+  - term: headache
+    soc: Nervous system disorders
+    intercept: -5.12
+    exposure_slope: 0.719
+    coefficients:
+      female: 0.35
+      age_z: -0.1
+      comorbidity_z: 0.12
+    grade_distribution:
+    - 0.8
+    - 0.175
+    - 0.025
+    - 0.0
+    - 0.0
+  - term: dizziness
+    soc: Nervous system disorders
+    intercept: -6.123
+    exposure_slope: 1.413
+    coefficients:
+      age_z: 0.28
+      egfr_z: -0.18
+      female: 0.22
+    grade_distribution:
+    - 0.72
+    - 0.235
+    - 0.043
+    - 0.002
+    - 0.0
+  - term: hypotension
+    soc: Vascular disorders
+    intercept: -7.016
+    exposure_slope: 1.727
+    coefficients:
+      age_z: 0.35
+      comorbidity_z: 0.2
+      prior_ae: 0.4
+    grade_distribution:
+    - 0.6
+    - 0.29
+    - 0.1
+    - 0.01
+    - 0.0
+  - term: hyperkalaemia
+    soc: Metabolism and nutrition disorders
+    intercept: -7.716
+    exposure_slope: 1.794
+    coefficients:
+      egfr_z: -0.55
+      comorbidity_z: 0.25
+      cyp2d6_pm: 0.1
+    grade_distribution:
+    - 0.55
+    - 0.3
+    - 0.13
+    - 0.02
+    - 0.0
+  - term: acute_kidney_injury
+    soc: Renal and urinary disorders
+    intercept: -8.459
+    exposure_slope: 1.593
+    coefficients:
+      egfr_z: -0.85
+      age_z: 0.4
+      comorbidity_z: 0.3
+    grade_distribution:
+    - 0.35
+    - 0.33
+    - 0.23
+    - 0.088
+    - 0.002
+    serious: true
+  - term: hepatotoxicity
+    soc: Hepatobiliary disorders
+    intercept: -8.464
+    exposure_slope: 1.725
+    coefficients:
+      hla_b_57_01: 1.1
+      slco1b1_decreased: 0.45
+      bmi_z: 0.2
+    grade_distribution:
+    - 0.38
+    - 0.33
+    - 0.21
+    - 0.075
+    - 0.005
+    serious: true
+  - term: hyperkalaemia_severe
+    soc: Metabolism and nutrition disorders
+    intercept: -9.8
+    exposure_slope: 2.036
+    coefficients:
+      egfr_z: -0.95
+      age_z: 0.45
+      comorbidity_z: 0.35
+    grade_distribution:
+    - 0.15
+    - 0.28
+    - 0.36
+    - 0.24
+    - 0.01
+    serious: true
+
+endpoints:
+  - name: change_in_systolic_bp
+    column: sbp_change
+    kind: continuous
+    direction: decrease
+    mcid: 5.0
+    is_primary: true
+    description: Change from baseline in seated systolic blood pressure at end of treatment (mmHg)
+  - name: responder_rate
+    column: sbp_change
+    kind: binary
+    direction: decrease
+    response_threshold: -10.0
+    description: Proportion of patients with a >= 10 mmHg reduction in systolic blood pressure
+  - name: change_in_diastolic_bp
+    column: dbp_change
+    kind: continuous
+    direction: decrease
+    mcid: 3.0
+    description: Change from baseline in seated diastolic blood pressure (mmHg)
+  - name: alt_elevation
+    column: alt_u_l
+    kind: continuous
+    direction: increase
+    mcid: 20.0
+    description: Absolute ALT at end of treatment (U/L)
+
+stopping_rules:
+  - rule_id: SR-01
+    description: Excess of CTCAE grade >= 3 events in any treatment arm
+    metric: grade3_plus_rate
+    threshold: 0.20
+    comparator: greater_or_equal
+    action: review
+    min_epoch: 2
+  - rule_id: SR-02
+    description: Serious adverse event rate above 10%
+    metric: sae_rate
+    threshold: 0.10
+    comparator: greater_or_equal
+    action: pause
+    min_epoch: 3
+  - rule_id: SR-03
+    description: Hy law (ALT >= 3x baseline and > 100 U/L) in more than 5% of an arm
+    metric: alt_elevation_rate
+    threshold: 0.05
+    comparator: greater_or_equal
+    action: review
+    min_epoch: 3
+
+eligibility:
+  min_age: 18
+  max_age: 75
+  min_egfr: 50
+  max_alt_u_l: 90
+  exclude_conditions: [heart_failure, prior_myocardial_infarction]
+  max_comorbidities: 5
+
+randomization:
+  method: stratified_block
+  strata: [sex, age_band]
+  block_size: 6
+
+placebo_effect:
+  sbp_mmhg: -5.5
+  dbp_mmhg: -3.0
+  hr_bpm: -1.2
+  onset_epochs: 2.5
+
+notes: >
+  Synthetic dose-finding design used by the platform demo, notebooks and CI.
+  Cohort sizes, priors and drug parameters are illustrative.

@@ -1,0 +1,14 @@
+# Core runtime dependencies (the only ones a local/CI run needs).
+# Distributed, LLM and tracking extras are declared in pyproject.toml:
+#   pip install -e '.[spark]'       # PySpark + Delta Lake
+#   pip install -e '.[llm]'         # LangChain + Amazon Bedrock
+#   pip install -e '.[tracking]'    # MLflow
+#   pip install -e '.[ml]'          # scikit-learn / XGBoost model backends
+#   pip install -e '.[dev]'         # pytest, ruff, mypy
+#   pip install -e '.[all]'
+numpy>=1.24,<3
+pandas>=2.0,<3
+pyarrow>=14.0
+pydantic>=2.6
+PyYAML>=6.0
+Jinja2>=3.1

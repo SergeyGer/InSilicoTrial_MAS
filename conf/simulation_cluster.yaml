@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------------------
+# Production profile: AWS Databricks cluster, Spark applyInPandas, Delta Lake,
+# Unity Catalog, Bedrock Claude personas, MLflow tracking + model registry.
+#
+#   databricks bundle deploy -t prod      # see databricks.yml
+#   databricks bundle run insilico_trial_simulation -t prod
+# ---------------------------------------------------------------------------
+protocol_path: conf/trial_protocol_demo.yaml
+
+n_patients: 10000
+n_cohorts: 40
+seed: 20240517
+epochs: 0
+output_dir: /dbfs/insilico-trial/artifacts
+
+llm_mode: triggered
+llm_sample_rate: 0.03
+llm_trigger_grade: 3     # on a cluster, narrate only clinically relevant events
+include_baseline_epoch: true
+export_cdisc: true
+report_formats: [markdown, html, json]
+
+storage:
+  backend: delta
+  catalog: trial_simulations_prod
+  bronze_schema: bronze
+  silver_schema: silver
+  gold_schema: gold
+  local_root: /tmp/insilico-lake        # fallback path when root_uri is empty
+  root_uri: ""                          # e.g. s3://insilico-trial-lake/unity or /Volumes/trial_simulations_prod/landing/lake
+  delta_partition_by: [arm_id]
+  time_travel_versions_kept: 64
+
+engine:
+  backend: spark
+  batch_size: 512
+  partition_mode: cohort       # groupBy + applyInPandas (specification section 2)
+  cohorts_per_partition: 2
+  fail_fast: false
+  single_node: false
+  spark_shuffle_partitions: 0  # 0 -> derived from the cohort count
+  spark_max_records_per_batch: 2048
+
+llm:
+  provider: bedrock
+  model: us.anthropic.claude-3-5-sonnet-20241022-v2:0
+  region: us-east-1
+  temperature: 0.2
+  max_tokens: 512
+  timeout_seconds: 45
+  max_retries: 4
+  requests_per_second: 25
+  burst: 40
+  max_concurrency: 64
+  cache_enabled: true
+  cache_path: /dbfs/insilico-trial/artifacts/llm_cache.jsonl
+
+ml:
+  backend: ridge
+  model_path: /dbfs/insilico-trial/models/physiology_model.json
+  auto_train_if_missing: true
+  training_rows: 60000
+  training_seed: 7
+  ridge_alpha: 1.0
+  use_mlflow_registry: true
+  mlflow_model_name: insilico_physiology
+  mlflow_stage: latest
+
+tracking:
+  enabled: true
+  tracking_uri: databricks
+  experiment_name: /Shared/insilico_trial_mas_prod
+  log_artifacts: true
+  trace_path: /dbfs/insilico-trial/artifacts/traces/llm_traces.jsonl
+  register_model: false
+  strict: false

@@ -1,0 +1,193 @@
+# ---------------------------------------------------------------------------
+# Synthetic population priors for the cohort generator.
+#
+# IMPORTANT / DISCLAIMER
+#   These frequencies and hazard weights are ILLUSTRATIVE values assembled for
+#   simulation purposes only. They are order-of-magnitude consistent with
+#   published pharmacogenomic and epidemiological literature, but they are NOT
+#   a validated epidemiological source and MUST be replaced with a licensed
+#   reference dataset (e.g. gnomAD, UK Biobank, NHANES) before any use in a
+#   regulatory submission. No real patient data is used or required.
+# ---------------------------------------------------------------------------
+version: "1.0.0"
+
+ancestries:
+  EUR: 0.45
+  AFR: 0.20
+  EAS: 0.15
+  SAS: 0.12
+  AMR: 0.08
+
+# CYP2D6 activity phenotype distribution per ancestry: PM/IM/NM/UM.
+cyp2d6_by_ancestry:
+  EUR: { PM: 0.07, IM: 0.30, NM: 0.58, UM: 0.05 }
+  AFR: { PM: 0.05, IM: 0.35, NM: 0.55, UM: 0.05 }
+  EAS: { PM: 0.01, IM: 0.45, NM: 0.50, UM: 0.04 }
+  SAS: { PM: 0.03, IM: 0.35, NM: 0.58, UM: 0.04 }
+  AMR: { PM: 0.05, IM: 0.35, NM: 0.56, UM: 0.04 }
+
+cyp3a4_by_ancestry:
+  EUR: { PM: 0.02, IM: 0.12, NM: 0.83, UM: 0.03 }
+  AFR: { PM: 0.04, IM: 0.20, NM: 0.73, UM: 0.03 }
+  EAS: { PM: 0.01, IM: 0.10, NM: 0.86, UM: 0.03 }
+  SAS: { PM: 0.02, IM: 0.14, NM: 0.81, UM: 0.03 }
+  AMR: { PM: 0.03, IM: 0.15, NM: 0.79, UM: 0.03 }
+
+# Carrier frequencies of the pharmacogenomic markers modelled by the platform.
+marker_frequencies:
+  hla_b_57_01:
+    EUR: 0.06
+    AFR: 0.02
+    EAS: 0.02
+    SAS: 0.05
+    AMR: 0.04
+  hla_dq2_2:
+    EUR: 0.11
+    AFR: 0.05
+    EAS: 0.08
+    SAS: 0.09
+    AMR: 0.09
+  adrb1_arg389gly:
+    EUR: 0.42
+    AFR: 0.39
+    EAS: 0.49
+    SAS: 0.44
+    AMR: 0.41
+  ace_dd:
+    EUR: 0.29
+    AFR: 0.24
+    EAS: 0.35
+    SAS: 0.27
+    AMR: 0.30
+  slco1b1_decreased:
+    EUR: 0.15
+    AFR: 0.10
+    EAS: 0.14
+    SAS: 0.13
+    AMR: 0.13
+
+# Baseline comorbidity prevalence at the reference age (55) with the
+# multiplicative effect applied per year of age and per BMI unit above 25.
+comorbidities:
+  - token: hypertension
+    base_rate: 0.34
+    age_multiplier: 1.045
+    bmi_multiplier: 1.030
+    smoking_multiplier: 1.10
+  - token: type_2_diabetes
+    base_rate: 0.13
+    age_multiplier: 1.040
+    bmi_multiplier: 1.080
+    smoking_multiplier: 1.05
+  - token: hyperlipidaemia
+    base_rate: 0.28
+    age_multiplier: 1.030
+    bmi_multiplier: 1.040
+    smoking_multiplier: 1.05
+  - token: chronic_kidney_disease
+    base_rate: 0.07
+    age_multiplier: 1.060
+    bmi_multiplier: 1.040
+    smoking_multiplier: 1.05
+  - token: asthma
+    base_rate: 0.09
+    age_multiplier: 1.000
+    bmi_multiplier: 1.020
+    smoking_multiplier: 1.15
+  - token: osteoarthritis
+    base_rate: 0.16
+    age_multiplier: 1.055
+    bmi_multiplier: 1.060
+    smoking_multiplier: 1.00
+  - token: obesity
+    base_rate: 0.18
+    age_multiplier: 1.010
+    bmi_multiplier: 1.150
+    smoking_multiplier: 1.00
+  - token: depression
+    base_rate: 0.11
+    age_multiplier: 1.010
+    bmi_multiplier: 1.010
+    smoking_multiplier: 1.10
+  - token: sleep_apnoea
+    base_rate: 0.08
+    age_multiplier: 1.020
+    bmi_multiplier: 1.110
+    smoking_multiplier: 1.00
+  - token: prior_myocardial_infarction
+    base_rate: 0.05
+    age_multiplier: 1.060
+    bmi_multiplier: 1.030
+    smoking_multiplier: 1.45
+  - token: heart_failure
+    base_rate: 0.03
+    age_multiplier: 1.070
+    bmi_multiplier: 1.030
+    smoking_multiplier: 1.25
+  - token: atrial_fibrillation
+    base_rate: 0.04
+    age_multiplier: 1.075
+    bmi_multiplier: 1.020
+    smoking_multiplier: 1.10
+  - token: hepatic_steatosis
+    base_rate: 0.10
+    age_multiplier: 1.015
+    bmi_multiplier: 1.090
+    smoking_multiplier: 1.00
+
+# Concomitant medication classes triggered by comorbidity tokens.
+concomitant_meds:
+  hypertension: [amlodipine, lisinopril, hydrochlorothiazide]
+  type_2_diabetes: [metformin, gliclazide]
+  hyperlipidaemia: [atorvastatin, rosuvastatin]
+  chronic_kidney_disease: [sodium_bicarbonate]
+  asthma: [salbutamol_inhaler]
+  osteoarthritis: [ibuprofen, paracetamol]
+  depression: [sertraline]
+  heart_failure: [bisoprolol, furosemide]
+  atrial_fibrillation: [apixaban, bisoprolol]
+  prior_myocardial_infarction: [aspirin, atorvastatin, bisoprolol]
+
+# Baseline physiology distributions (mean / sd) with covariate adjustments.
+physiology:
+  height_cm:
+    mean_male: 176.0
+    mean_female: 163.0
+    sd: 7.5
+  weight_kg:
+    mean_male: 84.0
+    mean_female: 72.0
+    sd: 16.0
+  baseline_sbp:
+    intercept: 116.0
+    age_slope_per_year: 0.38
+    bmi_slope_per_unit: 0.85
+    sd: 12.5
+  baseline_dbp:
+    intercept: 72.0
+    age_slope_per_year: 0.18
+    bmi_slope_per_unit: 0.55
+    sd: 8.0
+  baseline_hr:
+    intercept: 72.0
+    age_slope_per_year: -0.05
+    bmi_slope_per_unit: 0.30
+    sd: 9.0
+  alt_u_l:
+    log_mean: 3.05
+    log_sd: 0.38
+    bmi_slope_per_unit: 0.02
+  ast_u_l:
+    log_mean: 2.95
+    log_sd: 0.35
+  creatinine_mg_dl:
+    mean_male: 0.95
+    mean_female: 0.78
+    sd: 0.16
+    age_slope_per_year: 0.004
+  egfr:
+    intercept: 118.0
+    age_slope_per_year: -0.85
+    sd: 16.0
+
+site_ids: [SITE-01, SITE-02, SITE-03, SITE-04, SITE-05, SITE-06]

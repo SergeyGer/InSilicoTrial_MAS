@@ -1,0 +1,192 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "setup: create venv and install",
+      "type": "shell",
+      "command": "bash scripts/bootstrap.sh",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Creates .venv, installs the package with dev/llm/tracking extras, and (optionally) a portable JRE for Spark"
+    },
+    {
+      "label": "setup: install dev extras only",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pip install -e '.[dev,llm,tracking]'",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: unit (no Spark)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pytest -q -m 'not spark'",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "test: calibration (slow)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pytest -q tests/test_calibration.py",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: Spark engine",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pytest -q -m spark",
+      "options": {
+        "env": {
+          "JAVA_HOME": "${workspaceFolder}/.toolchain/jre17",
+          "PATH": "${workspaceFolder}/.toolchain/jre17/bin:${env:PATH}"
+        }
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: coverage",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pytest --cov=insilico_trial_mas --cov-report=term-missing --cov-report=xml -m 'not spark'",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "lint: ruff",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m ruff check src tests scripts",
+      "group": "test",
+      "problemMatcher": [
+        "$ruff"
+      ]
+    },
+    {
+      "label": "lint: ruff --fix",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m ruff check --fix src tests scripts",
+      "problemMatcher": [
+        "$ruff"
+      ]
+    },
+    {
+      "label": "types: mypy",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m mypy",
+      "group": "test",
+      "problemMatcher": [
+        "$mypy"
+      ]
+    },
+    {
+      "label": "run: dashboard for the newest run",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m insilico_trial_mas.cli dashboard --run $(ls -dt artifacts/*/RUN-* | head -1)",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: Studio UI (live, http://127.0.0.1:8765)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m insilico_trial_mas.cli studio --config conf/simulation_local.yaml --port 8765",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "test: UI (dashboard + studio)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m pytest -q tests/test_ui_dashboard.py tests/test_ui_studio.py",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: environment checklist",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m insilico_trial_mas.cli env-check",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: demo (150 patients, offline)",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m insilico_trial_mas.cli demo --patients 150 --epochs 3 --output-dir artifacts/demo",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: 10k cohort on the local engine",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m insilico_trial_mas.cli simulate --config conf/simulation_local.yaml --patients 10000 --cohorts 20 --engine local --output-dir artifacts/local-10k",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "run: verify notebook cells",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python scripts/run_notebook.py --patients 200 --epochs 3",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: reproducibility check",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python scripts/verify_reproducibility.py --patients 300 --epochs 3 --json",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: calibrate protocol plausibility",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python scripts/calibrate_protocol.py --patients 3000",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: refit adverse-event parameters",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python scripts/fit_ae_parameters.py --protocol conf/trial_protocol_demo.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "iac: terraform validate",
+      "type": "shell",
+      "command": "terraform -chdir=terraform init -backend=false -input=false && terraform -chdir=terraform validate",
+      "problemMatcher": []
+    },
+    {
+      "label": "iac: terraform plan",
+      "type": "shell",
+      "command": "terraform -chdir=terraform plan -out tfplan",
+      "problemMatcher": []
+    },
+    {
+      "label": "bundle: validate",
+      "type": "shell",
+      "command": "databricks bundle validate -t dev",
+      "problemMatcher": []
+    },
+    {
+      "label": "bundle: deploy dev",
+      "type": "shell",
+      "command": "databricks bundle deploy -t dev",
+      "problemMatcher": []
+    },
+    {
+      "label": "clean: artefacts and caches",
+      "type": "shell",
+      "command": "rm -rf artifacts .pytest_cache .ruff_cache .mypy_cache htmlcov coverage.xml && find . -name __pycache__ -type d -prune -exec rm -rf {} +",
+      "problemMatcher": []
+    }
+  ]
+}

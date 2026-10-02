@@ -1,0 +1,35 @@
+# ---------------------------------------------------------------------------
+# Copy to terraform.tfvars and fill in. Never commit real credentials.
+# ---------------------------------------------------------------------------
+
+databricks_host     = "https://dbc-00000000-0000.cloud.databricks.com"
+databricks_auth_type = "pat" # or "oauth-m2m" in CI with DATABRICKS_CLIENT_ID/SECRET
+databricks_profile  = ""     # e.g. "DEFAULT" locally, empty in CI
+
+# Well-known Databricks control-plane AWS account for your region.
+databricks_aws_account_id = "414351767826"
+
+# Fill in after the first apply (terraform output storage_credential_external_id).
+databricks_external_id = ""
+
+environment = "prod"
+aws_region  = "us-east-1"
+
+catalog_name  = "trial_simulations_prod"
+bronze_schema = "bronze"
+silver_schema = "silver"
+gold_schema   = "gold"
+
+lakehouse_bucket_name = "insilico-trial-lakehouse-prod"
+genomics_bucket_name  = "insilico-trial-genomics-prod"
+genomics_prefix       = "reference/genomics"
+
+enable_aws_batch          = false
+simulation_readers_group  = "simulation_readers"
+reader_user_names         = ["chief.statistician@example.com", "medical.monitor@example.com"]
+sql_warehouse_size        = "2X-Small"
+
+tags = {
+  CostCenter = "clinical-pharmacology"
+  Owner      = "clinical-trials-platform"
+}

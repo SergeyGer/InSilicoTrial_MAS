@@ -1,0 +1,97 @@
+name: Feature request
+description: Propose a capability for the simulation pipeline, the models, an engine, storage, the UI or the infrastructure.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposals are welcome, including ones that remove or simplify something.
+
+        Keep the project's posture in mind: InSilicoTrial MAS is a trial-design
+        decision-support simulator. It runs on fully synthetic cohorts, it is not clinical
+        evidence, and it is not a medical device
+        (`docs/ETHICS_AND_LIMITATIONS.md`).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: |
+        Describe the clinical-trial design question or engineering pain point, not the
+        implementation. What do you do today, and where does it break down?
+      placeholder: |
+        A protocol with two titration steps cannot express an arm that starts at 50 mg and
+        escalates only after a grade 2 event, so the readout cannot answer the question the
+        team actually asks.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: What should the platform do? Mention the module, config key or CLI flag you would expect it to live in.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: |
+        Other approaches, existing workarounds (config overrides, a custom protocol YAML, a
+        different engine or storage backend), and why they are not enough.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the platform would this touch?
+      options:
+        - agents
+        - PK/PD or ML models
+        - execution engines
+        - storage/Delta
+        - LLM providers
+        - UI/dashboard
+        - Terraform/IaC
+        - docs
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: surface
+    attributes:
+      label: Where should it live?
+      description: |
+        Optional: the configuration key, CLI flag, module or dashboard panel you would
+        expect the capability to appear in. A guess is useful.
+      placeholder: "engine.partition_mode / insilico-trial simulate --engine spark / ui/dashboard.py"
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: |
+        Optional: sketch, upstream reference (for example an ICH E9(R1) estimand or a
+        CDISC domain), impact on determinism or the Silver contract, and whether you can
+        contribute the change yourself.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: posture
+    attributes:
+      label: Compatibility with the project posture
+      options:
+        - label: >-
+            This request is compatible with the project's "synthetic data only, not clinical
+            evidence" posture: it does not require real patient data and does not claim
+            regulatory or clinical validity for the outputs.
+          required: true

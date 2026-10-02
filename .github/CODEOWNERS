@@ -1,0 +1,29 @@
+# CODEOWNERS for InSilicoTrial MAS.
+#
+# Every pull request requires a review from the owner of the files it touches.
+# The last matching pattern wins, so the specific rules below override the
+# catch-all first line.
+
+# Default owner for everything in the repository.
+*                                   @SergeyGer
+
+# Science-critical code: the hybrid physiology model, PK/PD closed forms and the
+# learned residual head. A change here can move every efficacy and safety number,
+# so it needs calibration evidence (see CONTRIBUTING.md, "Scientific changes").
+/src/insilico_trial_mas/ml/         @SergeyGer
+
+# Agent behaviour: screening, randomisation, dose directives, adverse-event
+# sampling and the biostatistical readout. A change here can alter the analysis.
+/src/insilico_trial_mas/agents/     @SergeyGer
+
+# Infrastructure as code: Unity Catalog, S3 storage credentials, grants and
+# service principals. A mistake here can expose patient-adjacent data.
+/terraform/                         @SergeyGer
+
+# CI/CD: workflow changes can publish artefacts, consume secrets or weaken gates.
+/.github/workflows/                 @SergeyGer
+
+# The responsible-use statement and the security policy define the project's
+# public claims; edits need an explicit owner review.
+/docs/ETHICS_AND_LIMITATIONS.md     @SergeyGer
+SECURITY.md                         @SergeyGer

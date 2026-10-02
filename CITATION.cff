@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use InSilicoTrial MAS in research or in a trial-design decision, please cite it as below."
+type: software
+title: "InSilicoTrial MAS: a distributed multi-agent platform for in-silico clinical trial simulation"
+abstract: >-
+  InSilicoTrial MAS simulates a randomised clinical trial end to end over a fully synthetic
+  patient cohort: a Protocol Agent screens and randomises digital twin agents, each patient
+  agent reacts epoch by epoch through mechanistic PK/PD, a learned physiology residual model
+  and an optional LLM narrator, and a Biostatistician Agent produces safety and efficacy
+  readouts with confidence intervals and Data Safety Monitoring Board stopping rules. It runs
+  unchanged on a laptop or on Databricks/AWS with Delta Lake, Unity Catalog and MLflow, and
+  is intended as a decision-support tool for trial design (dose selection, sample size and
+  endpoint trade-offs), not as a source of clinical evidence or medical advice.
+authors:
+  - family-names: Sergey
+    given-names: Ger
+repository-code: "https://github.com/SergeyGer/InSilicoTrial_MAS"
+url: "https://github.com/SergeyGer/InSilicoTrial_MAS"
+license: MIT
+version: "1.0.0"
+date-released: "2026-10-02"
+keywords:
+  - clinical trials
+  - in-silico trial simulation
+  - multi-agent simulation
+  - synthetic data
+  - decision support
+  - pharmacokinetics
+  - pharmacodynamics
+  - biostatistics
+  - Databricks
+  - Apache Spark
+  - Delta Lake
+  - MLflow

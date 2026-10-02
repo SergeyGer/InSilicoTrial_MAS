@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1010" width="1480" height="1010" role="img" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<title>InSilicoTrial MAS architecture</title><desc>Layered architecture: entry points, pipeline orchestration, three agent types, three interchangeable execution engines, medallion storage on Delta Lake, and the Databricks/AWS platform services that host them.</desc>
+<defs><marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8798a8"/></marker></defs>
+<rect width="1480" height="1010" fill="#f6f8fa"/>
+<text x="40" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="23" font-weight="700" fill="#101c28" text-anchor="start">InSilicoTrial MAS</text>
+<text x="292" y="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#5a6b7b" text-anchor="start">system architecture</text>
+<text x="40" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#5a6b7b" text-anchor="start">Multi-agent in-silico clinical trial simulation: synthetic patient personas, distributed execution, auditable Delta storage, biostatistical readout.</text>
+<rect x="1130" y="30" width="150" height="22" rx="11" fill="#e3f0f7"/>
+<text x="1205.0" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0b6e99" text-anchor="middle">Databricks  ·  AWS</text>
+<rect x="1292" y="30" width="148" height="22" rx="11" fill="#e4f3ec"/>
+<text x="1366.0" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#1c7c54" text-anchor="middle">206 tests  ·  MIT</text>
+<rect x="40" y="92" width="1010" height="108" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<text x="58" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b6e99" letter-spacing="1.4">1  ENTRY POINTS</text>
+<rect x="40" y="216" width="1010" height="92" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<text x="58" y="242" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b6e99" letter-spacing="1.4">2  ORCHESTRATION (DRIVER)</text>
+<rect x="40" y="324" width="1010" height="232" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<text x="58" y="350" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b6e99" letter-spacing="1.4">3  MULTI-AGENT SYSTEM</text>
+<rect x="40" y="576" width="1010" height="116" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<text x="58" y="602" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b6e99" letter-spacing="1.4">4  EXECUTION ENGINES</text>
+<rect x="40" y="708" width="1010" height="260" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<text x="58" y="734" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b6e99" letter-spacing="1.4">5  MEDALLION STORAGE (DELTA LAKE)</text>
+<rect x="1076" y="92" width="364" height="876" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<text x="1094" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b6e99" letter-spacing="1.4">PLATFORM SERVICES</text>
+<rect x="60" y="128" width="226" height="58" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="60" y="128" width="4" height="58" rx="2" fill="#0b6e99"/>
+<text x="76" y="152" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">CLI  insilico-trial</text>
+<text x="76" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">simulate · report · dashboard</text>
+<rect x="300" y="128" width="226" height="58" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="300" y="128" width="4" height="58" rx="2" fill="#0b6e99"/>
+<text x="316" y="152" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Databricks Job</text>
+<text x="316" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">bundle · wheel · schedule</text>
+<rect x="540" y="128" width="226" height="58" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="540" y="128" width="4" height="58" rx="2" fill="#0b6e99"/>
+<text x="556" y="152" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Notebooks</text>
+<text x="556" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">insilico_trial_demo.ipynb</text>
+<rect x="780" y="128" width="250" height="58" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="780" y="128" width="4" height="58" rx="2" fill="#0b6e99"/>
+<text x="796" y="152" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Studio UI + dashboard</text>
+<text x="796" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">live run · static readout</text>
+<rect x="60" y="250" width="970" height="44" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="60" y="250" width="4" height="44" rx="2" fill="#7a5ea8"/>
+<text x="76" y="274" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="650" fill="#101c28">pipeline.py</text>
+<text x="76" y="292" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#7a5ea8">protocol validation  →  screening &amp; randomisation  →  simulation  →  analysis  →  Gold tables  →  report, dashboard, manifest</text>
+<line x1="545" y1="200" x2="545" y2="246" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<rect x="60" y="362" width="268" height="176" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="60" y="362" width="4" height="176" rx="2" fill="#7a5ea8"/>
+<text x="76" y="386" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Protocol Agent</text>
+<text x="76" y="404" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#7a5ea8">agents/protocol_agent.py</text>
+<text x="76" y="421" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· eligibility screening + CONSORT log</text>
+<text x="76" y="436" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· stratified permuted-block</text>
+<text x="76" y="451" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">  randomisation (deterministic)</text>
+<text x="76" y="466" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· per-epoch dose directives</text>
+<text x="76" y="481" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· titration and protocol deviations</text>
+<rect x="344" y="362" width="402" height="176" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="344" y="362" width="4" height="176" rx="2" fill="#0b6e99"/>
+<text x="360" y="386" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Patient Persona Agent  x10,000</text>
+<text x="360" y="404" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">agents/patient_agent.py  ·  one digital twin per patient</text>
+<text x="360" y="421" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">PK/PD   one-compartment oral, first-order absorption,</text>
+<text x="360" y="436" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">            repeated-dose superposition  (ml/pk_pd.py)</text>
+<text x="360" y="451" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">ML      mechanistic + ridge residual, individual</text>
+<text x="360" y="466" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">            sensitivity, measurement noise  (ml/physiology.py)</text>
+<text x="360" y="481" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">LLM     persona narration with validated JSON contract,</text>
+<text x="360" y="496" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">            cache, rate limit, retry, offline fallback</text>
+<text x="360" y="511" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">        → one Silver row per patient-epoch</text>
+<rect x="762" y="362" width="268" height="176" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="762" y="362" width="4" height="176" rx="2" fill="#1c7c54"/>
+<text x="778" y="386" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Biostatistician Agent</text>
+<text x="778" y="404" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#1c7c54">agents/biostatistician_agent.py</text>
+<text x="778" y="421" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· per-arm summaries with Wilson CIs</text>
+<text x="778" y="436" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· Welch / bootstrap / Newcombe /</text>
+<text x="778" y="451" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">  Fisher / Benjamini-Hochberg</text>
+<text x="778" y="466" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· dose-response and ALT signals</text>
+<text x="778" y="481" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· DSMB stopping rules per epoch</text>
+<text x="778" y="496" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">· report, CDISC export, MLflow metrics</text>
+<line x1="328" y1="450" x2="344" y2="450" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="746" y1="450" x2="762" y2="450" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<rect x="60" y="610" width="300" height="66" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="60" y="610" width="4" height="66" rx="2" fill="#a2701a"/>
+<text x="76" y="634" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">SequentialEngine</text>
+<text x="76" y="652" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#a2701a">reference implementation · tests</text>
+<rect x="380" y="610" width="300" height="66" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="380" y="610" width="4" height="66" rx="2" fill="#a2701a"/>
+<text x="396" y="634" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">LocalEngine</text>
+<text x="396" y="652" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#a2701a">process pool + asyncio per worker</text>
+<rect x="700" y="610" width="330" height="66" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="700" y="610" width="4" height="66" rx="2" fill="#a2701a"/>
+<text x="716" y="634" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">SparkEngine</text>
+<text x="716" y="652" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#a2701a">applyInPandas | mapInPandas</text>
+<line x1="545" y1="556" x2="545" y2="606" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="553" y="585.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" fill="#8798a8">one partition = one batch of patients; identical agent code</text>
+<rect x="236" y="686" width="758" height="22" rx="11" fill="#e4f3ec"/>
+<text x="615.0" y="701" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1c7c54" text-anchor="middle">Verified: the Spark engine reproduces the sequential engine bit-for-bit  (tests/test_engines.py)</text>
+<rect x="60" y="744" width="300" height="206" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="60" y="744" width="4" height="206" rx="2" fill="#a2701a"/>
+<text x="76" y="768" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">bronze</text>
+<text x="76" y="786" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#a2701a">raw ingestion</text>
+<text x="76" y="803" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">synthetic_cohort</text>
+<text x="76" y="818" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">protocol_definitions</text>
+<text x="76" y="833" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">llm_raw_traces</text>
+<text x="76" y="848" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b"></text>
+<text x="76" y="863" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">append-only, replayable</text>
+<rect x="380" y="744" width="300" height="206" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="380" y="744" width="4" height="206" rx="2" fill="#0b6e99"/>
+<text x="396" y="768" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">silver</text>
+<text x="396" y="786" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">per-epoch simulation log</text>
+<text x="396" y="803" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">patient_states   (50 columns)</text>
+<text x="396" y="818" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">adverse_events</text>
+<text x="396" y="833" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">protocol_deviations</text>
+<text x="396" y="848" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">screen_failures</text>
+<text x="396" y="863" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b"></text>
+<text x="396" y="878" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">Delta time travel:</text>
+<text x="396" y="893" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">DESCRIBE HISTORY /</text>
+<text x="396" y="908" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">VERSION AS OF n</text>
+<rect x="700" y="744" width="330" height="206" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="700" y="744" width="4" height="206" rx="2" fill="#1c7c54"/>
+<text x="716" y="768" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">gold</text>
+<text x="716" y="786" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#1c7c54">decision-ready aggregates</text>
+<text x="716" y="803" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">arm_summaries</text>
+<text x="716" y="818" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">endpoint_comparisons</text>
+<text x="716" y="833" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">safety_summary</text>
+<text x="716" y="848" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">stopping_rule_evaluations</text>
+<text x="716" y="863" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">run_manifest   (full provenance)</text>
+<text x="716" y="878" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">lineage_edges</text>
+<line x1="360" y1="846" x2="380" y2="846" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="680" y1="846" x2="700" y2="846" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<line x1="545" y1="708" x2="545" y2="740" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="553" y="728.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" fill="#8798a8">engine writes observations</text>
+<rect x="1096" y="128" width="324" height="186" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="1096" y="128" width="4" height="186" rx="2" fill="#7a5ea8"/>
+<text x="1112" y="152" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Unity Catalog</text>
+<text x="1112" y="170" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#7a5ea8">governance · lineage · grants</text>
+<text x="1112" y="187" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">trial_simulations_prod.{bronze,silver,gold}</text>
+<text x="1112" y="202" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">one service principal per agent role</text>
+<text x="1112" y="217" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">external volumes for genomic data</text>
+<text x="1112" y="232" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">automatic table-level lineage</text>
+<rect x="1096" y="330" width="324" height="186" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="1096" y="330" width="4" height="186" rx="2" fill="#0b6e99"/>
+<text x="1112" y="354" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">MLflow</text>
+<text x="1112" y="372" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">tracking · registry · tracing</text>
+<text x="1112" y="389" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">params, metrics, report artefacts</text>
+<text x="1112" y="404" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">physiology model versions + digests</text>
+<text x="1112" y="419" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">persona spans: tokens, latency, cache</text>
+<text x="1112" y="434" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">one experiment per environment</text>
+<rect x="1096" y="532" width="324" height="186" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="1096" y="532" width="4" height="186" rx="2" fill="#a2701a"/>
+<text x="1112" y="556" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">AWS</text>
+<text x="1112" y="574" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#a2701a">compute · storage · identity</text>
+<text x="1112" y="591" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">EC2 worker pool (spot with fallback)</text>
+<text x="1112" y="606" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">S3 lakehouse + genomic reference</text>
+<text x="1112" y="621" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">IAM role, storage credential, KMS</text>
+<text x="1112" y="636" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">AWS Batch for genomic pre-processing</text>
+<rect x="1096" y="734" width="324" height="214" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="1096" y="734" width="4" height="214" rx="2" fill="#1c7c54"/>
+<text x="1112" y="758" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">Reproducibility</text>
+<text x="1112" y="776" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#1c7c54">what makes a readout auditable</text>
+<text x="1112" y="793" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">seed + protocol digest + model digest</text>
+<text x="1112" y="808" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">RNG per (run, patient, epoch, purpose)</text>
+<text x="1112" y="823" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">LLM responses cached and hashed</text>
+<text x="1112" y="838" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">wall-clock fields excluded by design</text>
+<text x="1112" y="853" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">run_manifest.json = replay recipe</text>
+<path d="M 1050 450 H 1073.0 V 220 H 1096" fill="none" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<path d="M 1030 630 H 1063.0 V 626 H 1096" fill="none" stroke="#8798a8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="40" y="986" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#5a6b7b" text-anchor="start">Legend</text>
+<rect x="110" y="977" width="10" height="10" rx="2" fill="#7a5ea8"/>
+<text x="128" y="986" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#5a6b7b" text-anchor="start">agent</text>
+<rect x="300" y="977" width="10" height="10" rx="2" fill="#0b6e99"/>
+<text x="318" y="986" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#5a6b7b" text-anchor="start">component</text>
+<rect x="490" y="977" width="10" height="10" rx="2" fill="#a2701a"/>
+<text x="508" y="986" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#5a6b7b" text-anchor="start">engine / raw layer</text>
+<rect x="680" y="977" width="10" height="10" rx="2" fill="#1c7c54"/>
+<text x="698" y="986" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#5a6b7b" text-anchor="start">verification / curated layer</text>
+<text x="1440" y="986" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#8798a8" text-anchor="end">Diagram source: scripts/render_architecture.py</text>
+</svg>

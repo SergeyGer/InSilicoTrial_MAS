@@ -1,0 +1,27 @@
+# Issue chooser configuration.
+#
+# Blank issues are disabled so that every report arrives with the information the
+# maintainer needs (engine backend, Python version, env-check output) and with an
+# explicit confirmation that no real patient data or credentials were pasted.
+blank_issues_enabled: false
+
+contact_links:
+  - name: GitHub Discussions - questions, ideas and design debate
+    url: https://github.com/SergeyGer/InSilicoTrial_MAS/discussions
+    about: >-
+      Ask "how do I ..." questions, share a protocol design, or discuss an idea before it
+      becomes an issue. Discussions must be enabled in repository settings (see
+      docs/REPOSITORY_SETTINGS.md).
+
+  - name: Responsible use, ethics and known limitations
+    url: https://github.com/SergeyGer/InSilicoTrial_MAS/blob/main/docs/ETHICS_AND_LIMITATIONS.md
+    about: >-
+      Read this before filing a science-related report: illustrative priors, unmodelled
+      biology and the "not clinical evidence" position are documented there.
+
+  - name: Security policy - report a vulnerability privately
+    url: https://github.com/SergeyGer/InSilicoTrial_MAS/blob/main/SECURITY.md
+    about: >-
+      Credential handling, Studio path traversal, unsafe deserialisation, YAML/LLM
+      injection and IaC exposure are handled through a private GitHub Security Advisory,
+      never a public issue.

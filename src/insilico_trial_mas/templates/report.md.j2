@@ -1,0 +1,289 @@
+# InSilicoTrial MAS - Simulated Clinical Trial Report
+
+**Protocol:** {{ protocol.protocol_id }} - {{ protocol.title }}  
+**Phase / design:** {{ protocol.phase }} / {{ protocol.design }}  
+**Indication:** {{ protocol.indication or "n/a" }} ({{ protocol.therapeutic_area }})  
+**Investigational product:** {{ protocol.drug.name }} ({{ protocol.drug.drug_class }}, {{ protocol.drug.route.upper() }})  
+**Simulation run:** `{{ provenance.sim_run_id }}`  
+**Generated:** {{ generated_at }} by InSilicoTrial MAS {{ provenance.package_version }} (git `{{ provenance.git_revision }}`)
+
+> **Disclaimer.** {{ disclaimer }}
+
+---
+
+## 1. Executive summary
+
+| Item | Value |
+| --- | --- |
+| Synthetic patients analysed | {{ analysis.overview.n_patients }} |
+| Simulated epochs per patient | {{ provenance.n_epochs }} (baseline + dosing) |
+| Execution engine | {{ provenance.engine_backend }} |
+| Physiology model | {{ provenance.physiology_model_version }} ({{ provenance.physiology_backend }}) |
+| LLM persona mode | {{ provenance.llm_mode }}{% if provenance.llm_model %} / {{ provenance.llm_model }}{% endif %} |
+| Total adverse events | {{ analysis.overview.n_adverse_events }} |
+| Patients with CTCAE grade >= 3 | {{ analysis.overview.grade3_plus_patients }} |
+| Safety alerts raised | {{ analysis.overview.safety_alerts }} |
+| Stopping-rule evaluations triggered | {{ analysis.overview.stopping_rules_triggered }} |
+
+{% if analysis.overview.best_arm is defined %}
+Best-performing treatment arm on the primary endpoint ({{ analysis.overview.primary_endpoint }}): **{{ analysis.overview.best_arm }}**
+with an effect of {{ analysis.overview.best_effect | num }} (p = {{ analysis.overview.best_p_value | pval }}),
+clinically meaningful per protocol MCID: **{{ analysis.overview.meets_mcid | num }}**.
+{% endif %}
+
+{% if protocol_warnings %}
+### Protocol review notes
+
+{% for warning in protocol_warnings %}
+- {{ warning }}
+{% endfor %}
+{% endif %}
+
+---
+
+## 2. Methods
+
+### 2.1 Cohort
+
+Synthetic patients are generated from population priors packaged with the platform
+(`resources/genomic_priors.yaml`): ancestry mixture, comorbidity hazards modulated by age,
+BMI and smoking, baseline physiology, concomitant medication and illustrative
+pharmacogenomic markers (CYP2D6/CYP3A4 phenotype, HLA-B\*57:01, HLA-DQ2.2, ADRB1 Arg389Gly,
+ACE I/D, SLCO1B1). No real patient data is used.
+
+### 2.2 Pharmacokinetics and pharmacodynamics
+
+A one-compartment oral model with first-order absorption and superposition across repeated
+dosing ({{ protocol.epoch_duration_hours }} h per epoch):
+
+```
+C(t) = F*D*ka / (V*(ka-ke)) * (exp(-ke*t) - exp(-ka*t)),  ke = ln(2) / t_half
+```
+
+Individual clearance integrates body weight (allometric), an age-related decline after 40
+years, an eGFR-scaled renal share and a CYP2D6-scaled hepatic share
+(renal {{ protocol.drug.renal_fraction | num }}, hepatic {{ protocol.drug.hepatic_fraction | num }},
+t½ {{ protocol.drug.half_life_h | num }} h, EC50 {{ protocol.drug.ec50_mg_l | num }} mg/L).
+Biomarker effects follow a sigmoid Emax link on the average steady-state concentration; QTc
+and hepatotoxicity use peak concentration.
+
+### 2.3 Learned model component
+
+A ridge-regression residual head (trained on synthetic historical cohorts, see
+`insilico-trial-mas train-physiology`) corrects the mechanistic prediction for
+pharmacogenomic interactions and saturating exposure effects. Model version
+`{{ provenance.physiology_model_version }}`, digest `{{ provenance.physiology_model_digest or "n/a" }}`,
+backend `{{ provenance.physiology_backend }}`.
+
+### 2.4 Agent roles
+
+| Agent | Responsibility in this run |
+| --- | --- |
+| Protocol Agent | Eligibility screening, stratified block randomisation, per-epoch dosing directives, protocol deviations |
+| Patient Persona Agent | Individual PK/PD, biomarker prediction, adverse-event sampling, LLM narration of symptoms, adherence |
+| Biostatistician Agent | Aggregation, inference, safety monitoring, this report |
+
+### 2.5 Statistics
+
+Continuous endpoints: Welch t-test with a seeded bootstrap confidence interval for the
+difference of means. Binary endpoints: two-proportion z-test (Fisher exact when any cell is
+< 5) with a Newcombe hybrid-score interval. Proportions carry Wilson intervals. Secondary
+endpoints are controlled for multiplicity with the Benjamini-Hochberg procedure
+(q-values reported). All statistics are computed without a SciPy dependency, so results are
+bit-reproducible across environments.
+
+---
+
+## 3. Participant disposition
+
+| Stage | Count |
+| --- | --- |
+| Screened | {{ analysis.cohort_flow.screened }} |
+| Screen failures | {{ analysis.cohort_flow.screen_failures }} |
+| Enrolled and simulated | {{ analysis.cohort_flow.enrolled }} |
+| Completed all epochs | {{ analysis.cohort_flow.completed }} |
+| Discontinued treatment | {{ analysis.cohort_flow.discontinued }} |
+
+{% if analysis.cohort_flow.failure_reasons %}
+Screen failure reasons:
+
+| Reason | Count |
+| --- | --- |
+{% for reason, count in analysis.cohort_flow.failure_reasons.items() %}
+| {{ reason }} | {{ count }} |
+{% endfor %}
+{% endif %}
+
+{% if analysis.cohort_flow.allocation %}
+Randomised allocation:
+
+| Arm | Patients |
+| --- | --- |
+{% for arm, count in analysis.cohort_flow.allocation.items() %}
+| {{ arm }} | {{ count }} |
+{% endfor %}
+{% endif %}
+
+---
+
+## 4. Demographics and baseline
+
+| Arm | n | Age (mean ± SD) | Female % | End SBP | Mean dSBP | Discontinued |
+| --- | --- | --- | --- | --- | --- | --- |
+{% for row in analysis.demographics %}
+| {{ row.arm_id }} | {{ row.n }} | {{ row.age_mean | num }} ± {{ row.age_sd | num }} | {{ row.female_pct | num }}% | {{ row.sbp_end_mean | num }} | {{ row.sbp_change_mean | num }} | {{ row.discontinued }} |
+{% endfor %}
+
+---
+
+## 5. Efficacy
+
+### 5.1 Per-arm summary (end of treatment)
+
+| Arm | Dose (mg) | n | dSBP (mean ± SD) | dDBP | dHR | Responder rate | ALT ratio |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+{% for summary in analysis.arm_summaries %}
+| {{ summary.label }} | {{ summary.dose_mg | num }} | {{ summary.n_patients }} | {{ summary.mean_sbp_change | num }} ± {{ summary.sd_sbp_change | num }} | {{ summary.mean_dbp_change | num }} | {{ summary.mean_hr_change | num }} | {{ summary.responder_rate | pct }} | {{ summary.mean_alt_ratio | num }} |
+{% endfor %}
+
+### 5.2 Treatment comparisons versus control
+
+| Endpoint | Arm | Effect | 95% CI | p-value | q-value | Test | MCID met |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+{% for comparison in analysis.comparisons %}
+| {{ comparison.endpoint }} | {{ comparison.arm_id }} | {{ comparison.effect_estimate | num }} | [{{ comparison.ci_low | num }}, {{ comparison.ci_high | num }}] | {{ comparison.p_value | pval }} | {{ comparison.q_value | pval }} | {{ comparison.test }} | {{ comparison.meets_mcid | num }} |
+{% endfor %}
+
+### 5.3 Dose-response
+
+| Arm | Dose (mg) | n | Mean change | 95% CI |
+| --- | --- | --- | --- | --- |
+{% for row in analysis.dose_response %}
+| {{ row.label }} | {{ row.dose_mg | num }} | {{ row.n }} | {{ row.mean | num }} | [{{ row.ci_low | num }}, {{ row.ci_high | num }}] |
+{% endfor %}
+
+{% if analysis.dose_response and analysis.dose_response[0].trend_slope_per_mg is defined %}
+Linear trend across arms: slope {{ analysis.dose_response[0].trend_slope_per_mg | num }} per mg
+(R² = {{ analysis.dose_response[0].trend_r_squared | num }}). A monotone trend supports the
+exposure-response assumption; a flat trend with a positive effect suggests a maximal-effect
+plateau rather than a dose-dependent benefit.
+{% endif %}
+
+---
+
+## 6. Safety
+
+### 6.1 Adverse events by arm and term
+
+| Arm | Term | SOC | Patients | Rate | Control rate | Risk difference (95% CI) | G3+ | SAE | Grade 5 | p | q |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+{% for row in analysis.safety_summary %}
+| {{ row.arm_id }} | {{ row.term }} | {{ row.soc }} | {{ row.n_patients_with_event }}/{{ row.n_patients }} | {{ row.rate | pct }} | {{ row.control_rate | pct }} | {{ row.risk_difference | pct }} [{{ row.rd_ci_low | pct }}, {{ row.rd_ci_high | pct }}] | {{ row.grade3_plus }} | {{ row.serious }} | {{ row.grade5 }} | {{ row.p_value | pval }} | {{ row.q_value | pval }} |
+{% endfor %}
+
+{% if not analysis.safety_summary %}
+No adverse events were recorded in this simulation.
+{% endif %}
+
+### 6.2 Safety alerts
+
+{% if analysis.safety_alerts %}
+{% for alert in analysis.safety_alerts %}
+- **[{{ alert.severity }}]** {{ alert.message }}
+{% endfor %}
+{% else %}
+No signal crossed the alerting thresholds. Absence of a signal in a simulated cohort is not
+evidence of safety.
+{% endif %}
+
+### 6.3 Data Safety Monitoring Board stopping rules
+
+{% set triggered = analysis.stopping_evaluations | selectattr("triggered") | list %}
+{% if triggered %}
+| Rule | Arm | Epoch | Metric | Observed | Threshold | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+{% for evaluation in triggered %}
+| {{ evaluation.rule_id }} | {{ evaluation.arm_id }} | {{ evaluation.epoch }} | {{ evaluation.metric }} | {{ evaluation.observed | num(3) }} | {{ evaluation.threshold | num(3) }} | {{ evaluation.action }} |
+{% endfor %}
+{% else %}
+No stopping rule was triggered. {{ analysis.stopping_evaluations | length }} rule/arm/epoch
+evaluations were performed.
+{% endif %}
+
+---
+
+## 7. LLM persona telemetry
+
+| Metric | Value |
+| --- | --- |
+| Narrated observations | {{ analysis.data_quality.llm_narrated_rows }} ({{ analysis.data_quality.llm_narrated_pct }}%) |
+| Narration failures | {{ analysis.data_quality.llm_error_rows }} |
+{% if traces and traces.llm_calls %}
+| LLM calls traced | {{ traces.llm_calls }} |
+| Cache hit rate | {{ traces.cache_hit_rate | pct }} |
+| Prompt tokens (total) | {{ traces.tokens_in_total }} |
+| Prompt tokens p50 / p95 | {{ traces.tokens_in_p50 }} / {{ traces.tokens_in_p95 }} |
+| Latency p50 / p95 (ms) | {{ traces.latency_ms_p50 }} / {{ traces.latency_ms_p95 }} |
+{% endif %}
+
+Qualitative symptoms are generated by the persona prompt and merged with the modelled
+adverse events: a matching term escalates the CTCAE grade when the persona reports more
+severe symptoms, and unmatched terms are retained with `source = llm` so they can be
+audited rather than silently discarded.
+
+---
+
+## 8. Data quality and reproducibility
+
+| Check | Value |
+| --- | --- |
+| Silver rows | {{ analysis.data_quality.rows }} |
+| Distinct patients | {{ analysis.data_quality.patients }} |
+| Epochs present | {{ analysis.data_quality.epochs }} |
+| Rows with LLM errors | {{ analysis.data_quality.llm_error_rows }} ({{ analysis.data_quality.llm_error_pct }}%) |
+| Physiology backends | {{ analysis.data_quality.physiology_backends | join(", ") }} |
+| Model versions | {{ analysis.data_quality.model_versions | join(", ") }} |
+
+Replay recipe:
+
+```bash
+insilico-trial simulate --config <config.yaml> --protocol {{ protocol.protocol_id }} \
+  --seed {{ provenance.seed }} --run-id {{ provenance.sim_run_id }}
+```
+
+Provenance: protocol digest `{{ provenance.protocol_digest }}`, package
+`{{ provenance.package_version }}`, git `{{ provenance.git_revision }}`, engine
+`{{ provenance.engine_backend }}`, storage `{{ provenance.storage_backend }}`, seed
+`{{ provenance.seed }}`, LLM `{{ provenance.llm_provider }}`/`{{ provenance.llm_model }}`
+(temperature {{ provenance.llm_temperature }}), cache hits {{ provenance.llm_cache_hits }} of
+{{ provenance.total_llm_calls }} calls.
+
+---
+
+## 9. Data lineage
+
+{% if lineage_mermaid %}
+```mermaid
+{{ lineage_mermaid }}
+```
+{% endif %}
+
+{% if lineage %}
+Nodes: {{ lineage.nodes }} | Edges: {{ lineage.edges }} | Agents: {{ lineage.agents | join(", ") }}
+{% endif %}
+
+---
+
+## 10. Limitations
+
+1. Synthetic data cannot reproduce unmeasured confounding, unmodelled biology or
+   protocol-execution errors present in real trials.
+2. Population priors and drug parameters are illustrative; they must be replaced with
+   licensed reference data and validated PK/PD estimates before any regulatory use.
+3. LLM narration is qualitative and non-deterministic in production; the platform caches
+   responses and records prompt hashes to make runs replayable, but a different model
+   version may produce different symptom narratives.
+4. Adverse-event models are logistic approximations with monotone exposure effects; they do
+   not capture idiosyncratic, time-varying or immune-mediated toxicity dynamics.
+5. The statistical analysis here mirrors a trial readout but is not a substitute for a
+   pre-registered Statistical Analysis Plan.

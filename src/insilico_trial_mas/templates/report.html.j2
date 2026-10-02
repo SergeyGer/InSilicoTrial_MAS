@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>InSilicoTrial MAS - {{ protocol.protocol_id }} simulation report</title>
+<style>
+  :root { --ink:#12212e; --muted:#5b6b7a; --line:#d8e0e8; --accent:#0b6e99; --warn:#a8451f; --bg:#f7f9fb; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:2rem; font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         color:var(--ink); background:var(--bg); }
+  main { max-width:1100px; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:10px; padding:2rem 2.25rem; }
+  h1 { font-size:1.7rem; margin:0 0 .25rem; }
+  h2 { font-size:1.2rem; margin:2rem 0 .6rem; padding-bottom:.3rem; border-bottom:1px solid var(--line); }
+  h3 { font-size:1rem; margin:1.25rem 0 .4rem; color:var(--accent); }
+  p, li { color:var(--ink); }
+  .meta { color:var(--muted); font-size:.92rem; }
+  .disclaimer { background:#fff6ed; border-left:4px solid var(--warn); padding:.85rem 1rem; border-radius:6px; font-size:.92rem; }
+  table { border-collapse:collapse; width:100%; margin:.6rem 0 1.1rem; font-size:.88rem; }
+  th, td { border:1px solid var(--line); padding:.42rem .55rem; text-align:left; }
+  th { background:#eef4f8; font-weight:600; }
+  tbody tr:nth-child(even) { background:#fafcfe; }
+  code, pre { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:#f2f5f8; }
+  pre { padding:.8rem 1rem; border-radius:8px; overflow-x:auto; font-size:.85rem; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.75rem; margin:1rem 0; }
+  .kpi { border:1px solid var(--line); border-radius:8px; padding:.7rem .8rem; background:#fbfdff; }
+  .kpi .v { font-size:1.35rem; font-weight:600; }
+  .kpi .l { color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+  .alert-high { color:var(--warn); font-weight:600; }
+  footer { margin-top:2rem; color:var(--muted); font-size:.85rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>InSilicoTrial MAS - Simulated Clinical Trial Report</h1>
+  <p class="meta">
+    <strong>Protocol</strong> {{ protocol.protocol_id }} - {{ protocol.title }}<br/>
+    <strong>Phase / design</strong> {{ protocol.phase }} / {{ protocol.design }} &nbsp;•&nbsp;
+    <strong>Indication</strong> {{ protocol.indication or "n/a" }} ({{ protocol.therapeutic_area }})<br/>
+    <strong>Product</strong> {{ protocol.drug.name }} ({{ protocol.drug.drug_class }}, {{ protocol.drug.route | upper }})<br/>
+    <strong>Run</strong> <code>{{ provenance.sim_run_id }}</code> &nbsp;•&nbsp;
+    <strong>Generated</strong> {{ generated_at }} by InSilicoTrial MAS {{ provenance.package_version }} (git <code>{{ provenance.git_revision }}</code>)
+  </p>
+  <p class="disclaimer"><strong>Disclaimer.</strong> {{ disclaimer }}</p>
+
+  <h2>1. Executive summary</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="v">{{ analysis.overview.n_patients }}</div><div class="l">patients simulated</div></div>
+    <div class="kpi"><div class="v">{{ analysis.overview.n_adverse_events }}</div><div class="l">adverse events</div></div>
+    <div class="kpi"><div class="v">{{ analysis.overview.grade3_plus_patients }}</div><div class="l">patients G3+</div></div>
+    <div class="kpi"><div class="v">{{ analysis.overview.safety_alerts }}</div><div class="l">safety alerts</div></div>
+    <div class="kpi"><div class="v">{{ analysis.overview.stopping_rules_triggered }}</div><div class="l">rules triggered</div></div>
+    <div class="kpi"><div class="v">{{ provenance.engine_backend }}</div><div class="l">engine</div></div>
+  </div>
+  {% if analysis.overview.best_arm is defined %}
+  <p>Best-performing arm on <strong>{{ analysis.overview.primary_endpoint }}</strong>:
+     <strong>{{ analysis.overview.best_arm }}</strong>, effect {{ analysis.overview.best_effect | num }}
+     (p = {{ analysis.overview.best_p_value | pval }}), MCID met: <strong>{{ analysis.overview.meets_mcid | num }}</strong>.</p>
+  {% endif %}
+  {% if protocol_warnings %}
+  <h3>Protocol review notes</h3>
+  <ul>{% for warning in protocol_warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <h2>2. Methods</h2>
+  <p>Synthetic cohort from packaged population priors (ancestry mixture, comorbidity hazards by age/BMI/smoking,
+     illustrative pharmacogenomic markers). One-compartment oral PK with first-order absorption and repeated-dose
+     superposition; sigmoid Emax PD on average steady-state concentration (peak concentration for QTc and
+     hepatotoxicity); ridge-regression residual head trained on synthetic historical cohorts; logistic
+     adverse-event models per MedDRA-style term with CTCAE grade distributions.</p>
+  <pre>C(t) = F*D*ka / (V*(ka-ke)) * (exp(-ke*t) - exp(-ka*t)),  ke = ln(2) / t_half</pre>
+  <table>
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Epoch duration</td><td>{{ protocol.epoch_duration_hours | num }} h</td></tr>
+      <tr><td>Half-life</td><td>{{ protocol.drug.half_life_h | num }} h</td></tr>
+      <tr><td>Bioavailability</td><td>{{ protocol.drug.bioavailability | num }}</td></tr>
+      <tr><td>EC50</td><td>{{ protocol.drug.ec50_mg_l | num }} mg/L (Hill {{ protocol.drug.hill | num }})</td></tr>
+      <tr><td>Renal / hepatic clearance share</td><td>{{ protocol.drug.renal_fraction | num }} / {{ protocol.drug.hepatic_fraction | num }}</td></tr>
+      <tr><td>Emax SBP / DBP / HR / QTc</td><td>{{ protocol.drug.emax.sbp_mmhg | num }} / {{ protocol.drug.emax.dbp_mmhg | num }} / {{ protocol.drug.emax.hr_bpm | num }} / {{ protocol.drug.emax.qtc_ms | num }}</td></tr>
+      <tr><td>Physiology model</td><td>{{ provenance.physiology_model_version }} ({{ provenance.physiology_backend }}), digest <code>{{ provenance.physiology_model_digest or "n/a" }}</code></td></tr>
+    </tbody>
+  </table>
+  <p>Statistics: Welch t-test with seeded bootstrap CI (continuous); two-proportion z-test or Fisher exact with
+     Newcombe interval (binary); Wilson intervals for proportions; Benjamini-Hochberg q-values across secondary
+     endpoints. Implemented without SciPy for bit-reproducibility across environments.</p>
+
+  <h2>3. Participant disposition</h2>
+  <table>
+    <thead><tr><th>Stage</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>Screened</td><td>{{ analysis.cohort_flow.screened }}</td></tr>
+      <tr><td>Screen failures</td><td>{{ analysis.cohort_flow.screen_failures }}</td></tr>
+      <tr><td>Enrolled and simulated</td><td>{{ analysis.cohort_flow.enrolled }}</td></tr>
+      <tr><td>Completed all epochs</td><td>{{ analysis.cohort_flow.completed }}</td></tr>
+      <tr><td>Discontinued treatment</td><td>{{ analysis.cohort_flow.discontinued }}</td></tr>
+    </tbody>
+  </table>
+  {% if analysis.cohort_flow.allocation %}
+  <h3>Randomised allocation</h3>
+  <table><thead><tr><th>Arm</th><th>Patients</th></tr></thead><tbody>
+  {% for arm, count in analysis.cohort_flow.allocation.items() %}<tr><td>{{ arm }}</td><td>{{ count }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+
+  <h2>4. Demographics and baseline</h2>
+  <table>
+    <thead><tr><th>Arm</th><th>n</th><th>Age (mean ± SD)</th><th>Female %</th><th>End SBP</th><th>Mean dSBP</th><th>Discontinued</th></tr></thead>
+    <tbody>
+    {% for row in analysis.demographics %}
+      <tr><td>{{ row.arm_id }}</td><td>{{ row.n }}</td><td>{{ row.age_mean | num }} ± {{ row.age_sd | num }}</td>
+          <td>{{ row.female_pct | num }}%</td><td>{{ row.sbp_end_mean | num }}</td>
+          <td>{{ row.sbp_change_mean | num }}</td><td>{{ row.discontinued }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>5. Efficacy</h2>
+  <h3>5.1 Per-arm summary (end of treatment)</h3>
+  <table>
+    <thead><tr><th>Arm</th><th>Dose (mg)</th><th>n</th><th>dSBP</th><th>dDBP</th><th>dHR</th><th>Responders</th><th>ALT ratio</th></tr></thead>
+    <tbody>
+    {% for summary in analysis.arm_summaries %}
+      <tr><td>{{ summary.label }}</td><td>{{ summary.dose_mg | num }}</td><td>{{ summary.n_patients }}</td>
+          <td>{{ summary.mean_sbp_change | num }} ± {{ summary.sd_sbp_change | num }}</td>
+          <td>{{ summary.mean_dbp_change | num }}</td><td>{{ summary.mean_hr_change | num }}</td>
+          <td>{{ summary.responder_rate | pct }}</td><td>{{ summary.mean_alt_ratio | num }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>5.2 Treatment comparisons versus control</h3>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Arm</th><th>Effect</th><th>95% CI</th><th>p</th><th>q</th><th>Test</th><th>MCID met</th></tr></thead>
+    <tbody>
+    {% for comparison in analysis.comparisons %}
+      <tr><td>{{ comparison.endpoint }}</td><td>{{ comparison.arm_id }}</td>
+          <td>{{ comparison.effect_estimate | num }}</td>
+          <td>[{{ comparison.ci_low | num }}, {{ comparison.ci_high | num }}]</td>
+          <td>{{ comparison.p_value | pval }}</td><td>{{ comparison.q_value | pval }}</td>
+          <td>{{ comparison.test }}</td><td>{{ comparison.meets_mcid | num }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>5.3 Dose-response</h3>
+  <table>
+    <thead><tr><th>Arm</th><th>Dose (mg)</th><th>n</th><th>Mean change</th><th>95% CI</th></tr></thead>
+    <tbody>
+    {% for row in analysis.dose_response %}
+      <tr><td>{{ row.label }}</td><td>{{ row.dose_mg | num }}</td><td>{{ row.n }}</td>
+          <td>{{ row.mean | num }}</td><td>[{{ row.ci_low | num }}, {{ row.ci_high | num }}]</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>6. Safety</h2>
+  <h3>6.1 Adverse events by arm and term</h3>
+  {% if analysis.safety_summary %}
+  <table>
+    <thead><tr><th>Arm</th><th>Term</th><th>SOC</th><th>Patients</th><th>Rate</th><th>Control</th><th>Risk difference (95% CI)</th><th>G3+</th><th>SAE</th><th>G5</th><th>p</th><th>q</th></tr></thead>
+    <tbody>
+    {% for row in analysis.safety_summary %}
+      <tr><td>{{ row.arm_id }}</td><td>{{ row.term | e }}</td><td>{{ row.soc | e }}</td>
+          <td>{{ row.n_patients_with_event }}/{{ row.n_patients }}</td><td>{{ row.rate | pct }}</td>
+          <td>{{ row.control_rate | pct }}</td>
+          <td>{{ row.risk_difference | pct }} [{{ row.rd_ci_low | pct }}, {{ row.rd_ci_high | pct }}]</td>
+          <td>{{ row.grade3_plus }}</td><td>{{ row.serious }}</td><td>{{ row.grade5 }}</td>
+          <td>{{ row.p_value | pval }}</td><td>{{ row.q_value | pval }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>No adverse events were recorded in this simulation.</p>{% endif %}
+
+  <h3>6.2 Safety alerts</h3>
+  {% if analysis.safety_alerts %}
+  <ul>{% for alert in analysis.safety_alerts %}
+    <li class="{% if alert.severity == 'high' %}alert-high{% endif %}">[{{ alert.severity }}] {{ alert.message | e }}</li>
+  {% endfor %}</ul>
+  {% else %}<p>No signal crossed the alerting thresholds. Absence of a signal in a simulated cohort is not evidence of safety.</p>{% endif %}
+
+  <h3>6.3 DSMB stopping rules</h3>
+  {% set triggered = analysis.stopping_evaluations | selectattr("triggered") | list %}
+  {% if triggered %}
+  <table>
+    <thead><tr><th>Rule</th><th>Arm</th><th>Epoch</th><th>Metric</th><th>Observed</th><th>Threshold</th><th>Action</th></tr></thead>
+    <tbody>
+    {% for evaluation in triggered %}
+      <tr><td>{{ evaluation.rule_id }}</td><td>{{ evaluation.arm_id }}</td><td>{{ evaluation.epoch }}</td>
+          <td>{{ evaluation.metric }}</td><td>{{ evaluation.observed | num(3) }}</td>
+          <td>{{ evaluation.threshold | num(3) }}</td><td>{{ evaluation.action }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>No stopping rule triggered across {{ analysis.stopping_evaluations | length }} evaluations.</p>{% endif %}
+
+  <h2>7. LLM persona telemetry</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Narrated observations</td><td>{{ analysis.data_quality.llm_narrated_rows }} ({{ analysis.data_quality.llm_narrated_pct }}%)</td></tr>
+      <tr><td>Narration failures</td><td>{{ analysis.data_quality.llm_error_rows }}</td></tr>
+      {% if traces and traces.llm_calls %}
+      <tr><td>LLM calls traced</td><td>{{ traces.llm_calls }}</td></tr>
+      <tr><td>Cache hit rate</td><td>{{ traces.cache_hit_rate | pct }}</td></tr>
+      <tr><td>Prompt tokens (total / p50 / p95)</td><td>{{ traces.tokens_in_total }} / {{ traces.tokens_in_p50 }} / {{ traces.tokens_in_p95 }}</td></tr>
+      <tr><td>Latency p50 / p95 (ms)</td><td>{{ traces.latency_ms_p50 }} / {{ traces.latency_ms_p95 }}</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <h2>8. Data quality and reproducibility</h2>
+  <table>
+    <thead><tr><th>Check</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Silver rows</td><td>{{ analysis.data_quality.rows }}</td></tr>
+      <tr><td>Distinct patients</td><td>{{ analysis.data_quality.patients }}</td></tr>
+      <tr><td>Epochs present</td><td>{{ analysis.data_quality.epochs }}</td></tr>
+      <tr><td>Physiology backends</td><td>{{ analysis.data_quality.physiology_backends | join(", ") }}</td></tr>
+      <tr><td>Model versions</td><td>{{ analysis.data_quality.model_versions | join(", ") }}</td></tr>
+      <tr><td>Seed</td><td>{{ provenance.seed }}</td></tr>
+      <tr><td>Protocol digest</td><td><code>{{ provenance.protocol_digest }}</code></td></tr>
+      <tr><td>LLM</td><td>{{ provenance.llm_provider }} / {{ provenance.llm_model }} (T={{ provenance.llm_temperature }}), cache hits {{ provenance.llm_cache_hits }}/{{ provenance.total_llm_calls }}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>9. Data lineage</h2>
+  {% if lineage_mermaid %}<pre>{{ lineage_mermaid }}</pre>{% endif %}
+  {% if lineage %}<p class="meta">Nodes: {{ lineage.nodes }} | Edges: {{ lineage.edges }} | Agents: {{ lineage.agents | join(", ") }}</p>{% endif %}
+
+  <h2>10. Limitations</h2>
+  <ol>
+    <li>Synthetic data cannot reproduce unmeasured confounding or unmodelled biology.</li>
+    <li>Population priors and drug parameters are illustrative and must be validated against licensed reference data.</li>
+    <li>LLM narration is qualitative; responses are cached and prompt hashes recorded, but model updates change narratives.</li>
+    <li>Adverse-event models are logistic approximations and do not capture idiosyncratic or immune-mediated toxicity.</li>
+    <li>This report is not a substitute for a pre-registered Statistical Analysis Plan.</li>
+  </ol>
+
+  <footer>Generated by InSilicoTrial MAS {{ provenance.package_version }} - run {{ provenance.sim_run_id }} -
+  {{ generated_at }}</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,53 @@
+# Git attributes for InSilicoTrial MAS.
+#
+# Everything that is text is normalised to LF on checkout and in the repository, so a
+# Windows contributor cannot introduce CRLF-only churn in the Python source, the YAML
+# configs or the shell scripts.
+
+* text=auto eol=lf
+
+# --- Binaries -------------------------------------------------------------
+# The `binary` macro expands to `-diff -merge -text`: never show a diff, never attempt a
+# merge, never convert line endings. Parquet is a columnar binary format; the images are
+# the social preview and the architecture/preview assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.parquet binary
+
+# --- Notebooks ------------------------------------------------------------
+# Keep notebooks as text so `merge=union` can combine edits made in *different cells* on
+# two branches - the usual notebook conflict. `-diff` suppresses the diff view, because
+# execution counts, cell ids and stored outputs make the JSON unreadable anyway; review
+# notebook changes through the rendered notebook instead. Run
+# `python scripts/run_notebook.py` before committing a changed notebook.
+*.ipynb -diff merge=union
+
+# --- SVG ------------------------------------------------------------------
+# SVG is text and is reviewed line by line (docs/architecture.svg,
+# docs/dashboard-wireframe.svg); the binary marker above must not swallow it.
+*.svg text eol=lf
+
+# --- Linguist -------------------------------------------------------------
+# Keep the GitHub language bar about the real source mix (src/**/*.py). The generated
+# HTML previews and the notebooks are documentation artefacts, not application code.
+docs/** linguist-documentation
+notebooks/** linguist-documentation
+docs/*.html linguist-documentation
+docs/studio-preview.html linguist-documentation
+docs/dashboard-preview.html linguist-documentation
+notebooks/*.ipynb linguist-documentation
+
+# --- git archive / release source tarballs --------------------------------
+# Tests, CI configuration, editor settings and local run artefacts are not part of a
+# usable source drop. terraform/, notebooks/, resources/ and Makefile are deliberately
+# kept: they are deliverables, not developer scaffolding.
+#
+# Note the `/**`: unlike .gitignore, a gitattributes pattern that names a directory does
+# not match the files inside it, so `/tests/ export-ignore` would silently do nothing
+# (verify with `git check-attr export-ignore -- tests/test_cli.py`).
+/tests/** export-ignore
+/.github/** export-ignore
+/.vscode/** export-ignore
+/artifacts/** export-ignore

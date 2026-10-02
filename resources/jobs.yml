@@ -1,0 +1,157 @@
+# ---------------------------------------------------------------------------
+# Simulation job: runs the full multi-agent pipeline on a Databricks cluster.
+#
+#   databricks bundle deploy -t prod
+#   databricks bundle run insilico_trial_simulation -t prod
+# ---------------------------------------------------------------------------
+resources:
+  jobs:
+    insilico_trial_simulation:
+      name: "[${bundle.target}] InSilicoTrial MAS - ${var.n_patients} agent simulation"
+      description: >-
+        Distributed in-silico clinical trial: synthetic cohort generation, Spark
+        applyInPandas patient agents (PK/PD + ML + LLM personas), Delta Lake
+        logging with time travel, MLflow tracking and a biostatistician report.
+      tags:
+        project: insilico-trial-mas
+        layer: gold
+      max_concurrent_runs: 4
+      timeout_seconds: 14400
+      email_notifications:
+        on_failure: []
+      parameters:
+        - name: config_path
+          default: ${var.config_path}
+        - name: protocol_path
+          default: ${var.protocol_path}
+        - name: n_patients
+          default: ${var.n_patients}
+        - name: catalog
+          default: ${var.catalog}
+      environments:
+        - environment_key: insilico
+          spec:
+            client: "3"
+            dependencies:
+              - dist/*.whl
+              - pyspark==3.5.3
+              - delta-spark==3.2.1
+              - mlflow-skinny>=2.12
+              - langchain-core>=0.2
+              - langchain-aws>=0.1
+      tasks:
+        - task_key: validate_protocol
+          environment_key: insilico
+          spark_python_task:
+            python_file: src/insilico_trial_mas/cli.py
+            parameters:
+              - validate-protocol
+              - --config
+              - "{{job.parameters.config_path}}"
+              - --protocol
+              - "{{job.parameters.protocol_path}}"
+              - --json
+
+        - task_key: simulate_trial
+          depends_on:
+            - task_key: validate_protocol
+          environment_key: insilico
+          spark_python_task:
+            python_file: src/insilico_trial_mas/cli.py
+            parameters:
+              - simulate
+              - --config
+              - "{{job.parameters.config_path}}"
+              - --protocol
+              - "{{job.parameters.protocol_path}}"
+              - --patients
+              - "{{job.parameters.n_patients}}"
+              - --engine
+              - spark
+              - --json
+          # Operational metadata lands in the Gold layer via the pipeline itself;
+          # the cluster only needs the Delta extensions for the Silver tables.
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: ${var.node_type}
+            num_workers: 4
+            autoscale:
+              min_workers: 2
+              max_workers: 12
+            data_security_mode: SINGLE_USER
+            aws_attributes:
+              availability: SPOT_WITH_FALLBACK
+              zone_id: auto
+              ebs_volume_count: 1
+              ebs_volume_size: 200
+            spark_conf:
+              spark.databricks.delta.preview.enabled: "true"
+              spark.sql.adaptive.enabled: "true"
+              spark.sql.adaptive.coalescePartitions.enabled: "true"
+              spark.sql.execution.arrow.pyspark.enabled: "true"
+              spark.sql.execution.arrow.maxRecordsPerBatch: "2048"
+              spark.databricks.cluster.profile: serverless
+            custom_tags:
+              ResourceClass: Serverless
+            spark_env_vars:
+              INSILICO_LOG_LEVEL: INFO
+              INSILICO_CATALOG: ${var.catalog}
+            libraries:
+              - pypi:
+                  package: mlflow-skinny>=2.12
+
+        - task_key: train_physiology_model
+          depends_on:
+            - task_key: simulate_trial
+          environment_key: insilico
+          spark_python_task:
+            python_file: src/insilico_trial_mas/cli.py
+            parameters:
+              - train-physiology
+              - --config
+              - "{{job.parameters.config_path}}"
+              - --rows
+              - "60000"
+              - --register
+              - --json
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: ${var.node_type}
+            num_workers: 2
+            data_security_mode: SINGLE_USER
+
+  # -------------------------------------------------------------------------
+  # Scheduled nightly regression run: a fixed seed must reproduce the previous
+  # night's numbers, which is the cheapest possible guard against silent
+  # model or dependency drift.
+  # -------------------------------------------------------------------------
+  jobs_regression:
+    insilico_trial_nightly_regression:
+      name: "[${bundle.target}] InSilicoTrial MAS - nightly reproducibility check"
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: UTC
+        pause_status: PAUSED
+      parameters:
+        - name: config_path
+          default: conf/simulation_local.yaml
+        - name: protocol_path
+          default: conf/trial_protocol_demo.yaml
+      tasks:
+        - task_key: reproducibility_check
+          environment_key: insilico
+          spark_python_task:
+            python_file: scripts/verify_reproducibility.py
+            parameters:
+              - --config
+              - "{{job.parameters.config_path}}"
+              - --protocol
+              - "{{job.parameters.protocol_path}}"
+              - --patients
+              - "500"
+      environments:
+        - environment_key: insilico
+          spec:
+            client: "3"
+            dependencies:
+              - dist/*.whl

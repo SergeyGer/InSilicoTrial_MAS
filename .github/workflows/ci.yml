@@ -1,0 +1,168 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONPATH: src
+  INSILICO_LOG_LEVEL: WARNING
+
+jobs:
+  lint-and-types:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+      - name: Ruff
+        run: ruff check src tests scripts
+      - name: Mypy
+        run: mypy
+
+  tests:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev,llm,tracking]'
+      - name: Unit tests (no Spark)
+        run: pytest -q -m "not spark" --cov=insilico_trial_mas --cov-report=xml
+      - name: Upload coverage
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+
+  science-validation:
+    name: Simulation plausibility and reproducibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev,tracking]'
+      - name: Calibration bands
+        run: pytest -q tests/test_calibration.py
+      - name: Two runs with the same seed must be identical
+        run: python scripts/verify_reproducibility.py --patients 400 --epochs 4 --json
+      - name: Verification notebook cells execute
+        run: python scripts/run_notebook.py --patients 150 --epochs 3
+      - name: UI (dashboard + studio endpoints)
+        run: pytest -q tests/test_ui_dashboard.py tests/test_ui_studio.py
+      - name: End-to-end demo produces a report
+        run: |
+          python -m insilico_trial_mas.cli demo --patients 200 --epochs 3 --output-dir artifacts/ci-demo --json > demo.json
+          python - <<'PY'
+          import json, pathlib
+          payload = json.loads(pathlib.Path("demo.json").read_text())
+          report = pathlib.Path(payload["report"]["markdown"])
+          assert report.exists(), "the markdown report must be produced"
+          text = report.read_text(encoding="utf-8")
+          for section in ("Executive summary", "Safety", "Data quality", "Limitations"):
+              assert section in text, f"missing report section: {section}"
+          dashboard = pathlib.Path(payload["dashboard"])
+          assert dashboard.exists(), "every run must produce a dashboard"
+          html = dashboard.read_text(encoding="utf-8")
+          for panel in ("overview", "efficacy", "safety", "patients", "reproducibility", "lineage"):
+              assert f'data-panel="{panel}"' in html, f"missing dashboard panel: {panel}"
+          assert "https://" not in html, "the dashboard must not reference external assets"
+          print(f"report ok: {report} ({len(text)} chars, {payload['patients']} patients)")
+          print(f"dashboard ok: {dashboard} ({len(html) // 1024} KB)")
+          PY
+      - name: Upload the dashboard artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation-dashboard
+          path: artifacts/ci-demo/*/report/dashboard.html
+          if-no-files-found: error
+
+  spark-engine:
+    name: Spark engine (local[*] driver)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev,spark]'
+      - name: Spark engine must reproduce the sequential engine
+        run: pytest -q -m spark
+
+  infrastructure:
+    name: Terraform and bundle validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - name: Formatting
+        run: terraform -chdir=terraform fmt -recursive -check
+      - name: Validate
+        run: |
+          terraform -chdir=terraform init -backend=false -input=false
+          terraform -chdir=terraform validate
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Generated artefacts are current (architecture, social preview, UI previews)
+        run: |
+          python -m pip install --upgrade pip pyyaml pillow numpy
+          python scripts/render_architecture.py --check
+          python scripts/render_social_preview.py --check
+          python scripts/render_ui_previews.py --check
+
+      - name: Databricks bundle schema check
+        run: |
+          python -m pip install --upgrade pip pyyaml
+          python - <<'PY'
+          import pathlib, yaml
+          bundle = yaml.safe_load(pathlib.Path("databricks.yml").read_text())
+          assert bundle["bundle"]["name"] == "insilico-trial-mas"
+          assert set(bundle["targets"]) == {"dev", "prod"}
+          jobs = yaml.safe_load(pathlib.Path("resources/jobs.yml").read_text())
+          tasks = jobs["resources"]["jobs"]["insilico_trial_simulation"]["tasks"]
+          keys = [task["task_key"] for task in tasks]
+          assert keys == ["validate_protocol", "simulate_trial", "train_physiology_model"], keys
+          print("bundle definition ok")
+          PY

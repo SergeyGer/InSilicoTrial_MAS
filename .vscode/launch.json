@@ -1,0 +1,183 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Simulate trial (local profile, offline LLM)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "insilico_trial_mas.cli",
+      "args": [
+        "simulate",
+        "--config",
+        "conf/simulation_local.yaml",
+        "--patients",
+        "300",
+        "--cohorts",
+        "4",
+        "--epochs",
+        "4",
+        "--engine",
+        "sequential",
+        "--llm-mode",
+        "triggered",
+        "--output-dir",
+        "artifacts/debug"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "INSILICO_LOG_LEVEL": "DEBUG"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Simulate trial (Spark, local[*] driver)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "insilico_trial_mas.cli",
+      "args": [
+        "simulate",
+        "--config",
+        "conf/simulation_local.yaml",
+        "--patients",
+        "400",
+        "--cohorts",
+        "6",
+        "--epochs",
+        "4",
+        "--engine",
+        "spark",
+        "--output-dir",
+        "artifacts/debug-spark"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "JAVA_HOME": "${workspaceFolder}/.toolchain/jre17",
+        "PATH": "${workspaceFolder}/.toolchain/jre17/bin:${env:PATH}",
+        "INSILICO_LOG_LEVEL": "INFO"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Quick demo (150 patients, offline)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "insilico_trial_mas.cli",
+      "args": [
+        "demo",
+        "--patients",
+        "150",
+        "--epochs",
+        "3",
+        "--output-dir",
+        "artifacts/demo"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Environment checklist",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "insilico_trial_mas.cli",
+      "args": [
+        "env-check"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Pytest: current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-vv",
+        "-s"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Pytest: all except Spark",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-q",
+        "-m",
+        "not spark"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Verify notebook cells",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/run_notebook.py",
+      "args": [
+        "--patients",
+        "200",
+        "--epochs",
+        "3"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Reproducibility check",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/verify_reproducibility.py",
+      "args": [
+        "--patients",
+        "300",
+        "--epochs",
+        "3",
+        "--json"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Dashboard: build for the newest run",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "insilico_trial_mas.cli",
+      "args": [
+        "dashboard",
+        "--run",
+        "artifacts/final-demo",
+        "--open"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Studio: serve live UI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "insilico_trial_mas.cli",
+      "args": [
+        "studio",
+        "--config",
+        "conf/simulation_local.yaml",
+        "--port",
+        "8765",
+        "--no-browser"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+# ---------------------------------------------------------------------------
+# Databricks Asset Bundle for InSilicoTrial MAS.
+#
+#   databricks bundle validate -t dev
+#   databricks bundle deploy   -t prod
+#   databricks bundle run insilico_trial_simulation -t prod
+#
+# The bundle installs the wheel on the cluster, runs the simulation as a job and
+# stores artefacts in the workspace/DBFS. Terraform (terraform/) provisions the
+# Unity Catalog objects, storage credentials and service principals that this
+# bundle assumes.
+# ---------------------------------------------------------------------------
+bundle:
+  name: insilico-trial-mas
+
+variables:
+  catalog:
+    description: Unity Catalog that owns the medallion schemas
+    default: trial_simulations_prod
+  protocol_path:
+    description: Trial protocol YAML (path inside the bundle or a workspace path)
+    default: conf/trial_protocol_demo.yaml
+  config_path:
+    description: Simulation configuration profile
+    default: conf/simulation_cluster.yaml
+  node_type:
+    description: AWS EC2 instance type for the workers
+    default: m5.2xlarge
+  n_patients:
+    description: Synthetic cohort size
+    default: "10000"
+
+include:
+  - resources/*.yml
+
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+artifacts:
+  default:
+    type: whl
+    build: python -m build --wheel --outdir dist
+    path: .
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: ${workspace.host}
+    variables:
+      catalog: trial_simulations_dev
+      n_patients: "2000"
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: trial_simulations_prod
+      n_patients: "10000"
+    permissions:
+      - level: CAN_VIEW
+        group_name: simulation_readers
+      - level: CAN_MANAGE_RUN
+        service_principal_name: biostatistician_agent_service_principal

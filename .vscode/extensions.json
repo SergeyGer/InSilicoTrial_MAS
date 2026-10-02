@@ -1,0 +1,18 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "charliermarsh.ruff",
+    "ms-toolsai.jupyter",
+    "ms-toolsai.datawrangler",
+    "databricks.databricks",
+    "hashicorp.terraform",
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "eamodio.gitlens",
+    "editorconfig.editorconfig",
+    "github.vscode-github-actions"
+  ],
+  "unwantedRecommendations": []
+}
