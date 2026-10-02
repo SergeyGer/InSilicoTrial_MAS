@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+
+- Terraform: raised the AWS provider constraint from `~> 5.50` to `~> 6.0` and
+  migrated the module to it (verified against 6.67.0, pinned in
+  `terraform/.terraform.lock.hcl`). The only breaking change that affected the
+  module is the provider 6.0 rename of `aws_batch_compute_environment`'s
+  `compute_environment_name` argument to `name`; the S3, IAM and Secrets Manager
+  resources the module uses are unchanged in 6.x, and so is the Databricks
+  provider constraint.
 
 ## [1.0.0] - 2026-10-02
 

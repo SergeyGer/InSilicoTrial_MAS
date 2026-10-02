@@ -215,14 +215,16 @@ resource "databricks_external_location" "genomics" {
 # Optional: AWS Batch queue for burst genomic pre-processing
 # ---------------------------------------------------------------------------
 
+# AWS provider 6.x renamed this resource's `compute_environment_name` argument to
+# `name` (and `compute_environment_name_prefix` to `name_prefix`).
 resource "aws_batch_compute_environment" "genomics" {
   count = var.enable_aws_batch ? 1 : 0
 
-  compute_environment_name = "insilico-genomics-${var.environment}"
-  type                     = "MANAGED"
-  state                    = "ENABLED"
-  service_role             = aws_iam_role.batch_service[0].arn
-  depends_on               = [aws_iam_role_policy_attachment.batch_service]
+  name         = "insilico-genomics-${var.environment}"
+  type         = "MANAGED"
+  state        = "ENABLED"
+  service_role = aws_iam_role.batch_service[0].arn
+  depends_on   = [aws_iam_role_policy_attachment.batch_service]
 
   compute_resources {
     type                = "EC2"

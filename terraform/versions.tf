@@ -14,8 +14,10 @@ terraform {
       version = "~> 1.50"
     }
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.50"
+      source = "hashicorp/aws"
+      # Moved to the 6.x major line; the only argument this module had to change
+      # is the AWS Batch compute environment name. See README.md, "AWS provider 6.x".
+      version = "~> 6.0"
     }
   }
 

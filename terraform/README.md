@@ -36,6 +36,34 @@ The original snippet could not be applied to a fresh workspace:
    a Unity Catalog volume for the raw genomic datasets mentioned in the platform
    description.
 
+## AWS provider 6.x
+
+The module requires `hashicorp/aws ~> 6.0` (verified against 6.67.0, which
+`terraform/.terraform.lock.hcl` pins). Moving from 5.x needed exactly one code
+change:
+
+* **`aws_batch_compute_environment`**: provider 6.0 renamed
+  `compute_environment_name` to `name` (and `compute_environment_name_prefix` to
+  `name_prefix`). The optional Batch compute environment uses `name` now; the name
+  it creates is unchanged.
+
+Nothing else the module uses broke, and this was checked against the provider
+schema and the 6.0.0 changelog rather than assumed:
+
+* the S3 resources keep the same arguments — `aws_s3_bucket_lifecycle_configuration`
+  still takes `rule.filter { prefix = ... }` (the `rule.prefix` shorthand stays
+  deprecated), and `transition_default_minimum_object_size` still defaults to
+  `all_storage_classes_128K` in both 5.x and 6.x, so the transition semantics of the
+  genomic archive rule do not change;
+* `aws_iam_policy_document`, `aws_iam_role`, `aws_iam_role_policy`,
+  `aws_iam_role_policy_attachment` and `aws_secretsmanager_secret` have no breaking
+  changes, and the `default_tags` provider block is unaffected.
+
+The Databricks provider constraint is deliberately unchanged. Note that
+`enable_aws_batch = true` still needs real subnet ids in `compute_resources.subnets`
+(the module ships an empty placeholder, which AWS rejects at apply time); that is a
+pre-existing limitation, not something provider 6.x introduced.
+
 ## Usage
 
 ```bash
