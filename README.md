@@ -424,6 +424,7 @@ plus CodeQL analysis and Dependabot updates.
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Profiles, environment overrides, credential chains, secrets on Databricks |
 | [docs/SPEC_COMPLIANCE.md](docs/SPEC_COMPLIANCE.md) | Requirement → implementation → test mapping, and every defect fixed |
 | [docs/ETHICS_AND_LIMITATIONS.md](docs/ETHICS_AND_LIMITATIONS.md) | Responsible use, bias, what the model does not capture |
+| [docs/SECURITY_NOTES.md](docs/SECURITY_NOTES.md) | Every CodeQL finding and how it was resolved, including the one dismissed as a false positive |
 | [docs/REPOSITORY_SETTINGS.md](docs/REPOSITORY_SETTINGS.md) | Recommended GitHub configuration (About, topics, protection rules) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [CHANGELOG.md](CHANGELOG.md) | How to contribute, how to report a vulnerability, release history |
 

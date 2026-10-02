@@ -150,3 +150,12 @@ The defaults are safe for a laptop, but a shared deployment needs more:
   clinical narratives;
 - review `terraform plan` output for grants, bucket policies and public access blocks before
   every apply, and enable the storage lifecycle/retention settings you intend to rely on.
+
+## Static analysis
+
+CodeQL runs on every push and pull request to `main`, plus a weekly scan. Findings
+are triaged in the repository rather than only in the alert UI:
+[docs/SECURITY_NOTES.md](docs/SECURITY_NOTES.md) lists every alert with its
+resolution, and documents the two hardening patterns the analysis produced - never
+log provider exception text (`logging_utils.error_kind`) and never log identifiers
+(`logging_utils.anonymised_ref`).
