@@ -135,7 +135,9 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Lint the Dockerfile
-        run: docker run --rm -i hadolint/hadolint:2.12.0 < Dockerfile
+        run: |
+          docker run --rm -i -v "$PWD/.hadolint.yaml:/.hadolint.yaml:ro" \
+            hadolint/hadolint:2.12.0 hadolint --config /.hadolint.yaml - < Dockerfile
 
       - name: Build the runtime image
         run: docker build --target runtime -t insilico-trial-mas:ci .
@@ -208,6 +210,7 @@ jobs:
 
       - name: Databricks bundle schema check
         run: |
+          python -m pip install --upgrade pip pyyaml
           python - <<'PY'
           """Validate the Asset Bundle against the resource model the CLI enforces.
 
