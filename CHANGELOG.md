@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation rebuilt around two audiences: a recruiter-facing README (what the
+  platform does and why it matters, with screenshots and a generated product tour)
+  and a 24-page technical wiki covering the science, the platform, operations and
+  assurance. Screenshots and the tour are regenerated from the running application by
+  `scripts/capture_media.py` (`make media-capture`), so they cannot drift.
+- Stale figures corrected: the suite collects 231 tests (was documented as 206/220),
+  the scanner opened 24 alerts over the project (23 fixed, 1 dismissed), and the
+  required-check list now includes the Docker job.
+
 - Replaced the placeholder `Dockerfile` (a bare Ubuntu image that only opened a
   shell) with the multi-stage build described above.
 

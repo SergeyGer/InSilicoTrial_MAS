@@ -75,6 +75,7 @@ REQUIRED_CHECKS: tuple[str, ...] = (
     "Tests (Python 3.11)",
     "Tests (Python 3.12)",
     "Simulation plausibility and reproducibility",
+    "Docker image and compose stack",
     "Spark engine (local[*] driver)",
     "Terraform and bundle validation",
 )

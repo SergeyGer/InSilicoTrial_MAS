@@ -159,15 +159,19 @@ Tests (Python 3.12)
 Simulation plausibility and reproducibility
 Spark engine (local[*] driver)
 Terraform and bundle validation
+Docker image and compose stack
 Analyze Python
 ```
 
-`scripts/github_repo_setup.py --protect-main` applies exactly these eight
-`REQUIRED_CHECKS`, CodeQL included, so a security regression cannot be merged either.
+`scripts/github_repo_setup.py --protect-main` applies exactly these nine
+`REQUIRED_CHECKS`, CodeQL and the container build included, so neither a security nor a
+packaging regression can be merged.
 
 Notes:
 
-- Seven checks come from `.github/workflows/ci.yml`; `Analyze Python` is the job in
+- Eight checks come from `.github/workflows/ci.yml` (`lint-and-types`, the three
+  `tests` matrix jobs, `science-validation`, `spark-engine`, `docker`, `infrastructure`);
+  `Analyze Python` is the job in
   `.github/workflows/codeql.yml`. GitHub matches status checks by the job's `name:`, and a
   matrix job produces one check per matrix value - which is why the Python versions are
   listed separately. `.github/workflows/release.yml` runs on `v*` tags only, so its jobs
@@ -300,6 +304,7 @@ curl -sS -X PUT \
             "Simulation plausibility and reproducibility",
             "Spark engine (local[*] driver)",
             "Terraform and bundle validation",
+            "Docker image and compose stack",
             "Analyze Python"
           ]
         },

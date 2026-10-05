@@ -64,8 +64,8 @@ insilico-trial demo --patients 200 --epochs 3   # offline end-to-end run into ar
    required, and `main` only accepts linear history: PRs are squash-merged or rebased, and
    force-pushes to `main` are rejected.
 
-Continuous integration (`.github/workflows/ci.yml`) runs five jobs on every pull request,
-which appear as seven checks because the test job fans out over the Python matrix:
+Continuous integration (`.github/workflows/ci.yml`) runs six jobs on every pull request,
+which appear as eight checks plus the CodeQL analysis because the test job fans out over the Python matrix:
 `Lint and type-check`, `Tests (Python 3.10)`, `Tests (Python 3.11)`, `Tests (Python 3.12)`,
 `Simulation plausibility and reproducibility`, `Spark engine (local[*] driver)` and
 `Terraform and bundle validation`. CodeQL analysis (`Analyze Python`) runs on top of that.
@@ -78,7 +78,7 @@ what you touched.
 | Command | What it proves | When |
 | --- | --- | --- |
 | `make check` | `ruff check src tests scripts` + `mypy` + the fast test suite | Every change |
-| `make test` | 204 of the 206 tests, excluding the Spark-marked ones | Every change |
+| `make test` | 229 of the 231 tests, excluding the two Spark-marked ones | Every change |
 | `make test-spark` | The 2 Spark tests: the Spark engine reproduces the sequential engine, and both partition modes agree | Any change to `engine/`, `ml/`, `agents/` or the Silver contract |
 | `make coverage` | `coverage.xml` plus a terminal report (`--cov=insilico_trial_mas`) | Optional, useful for large additions |
 | `make verify-repro` | Two runs with the same seed produce identical comparable rows (`scripts/verify_reproducibility.py --patients 400 --epochs 4`) | Any change that can affect a stochastic draw |

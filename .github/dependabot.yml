@@ -79,3 +79,21 @@ updates:
       terraform-minor-and-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+
+  # Base images used by the Dockerfile (`python:3.12-slim-bookworm`).
+  - package-ecosystem: "docker"
+    rebase-strategy: "auto"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    assignees:
+      - "SergeyGer"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps):"

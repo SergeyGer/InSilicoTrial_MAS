@@ -5,8 +5,10 @@ weekly scheduled scan — see [`.github/workflows/codeql.yml`](../.github/workfl
 This file records what the analysis found and how each finding was resolved, so the
 decisions can be reviewed in the repository instead of only in the alert UI.
 
-Last full triage: 21 open alerts — **20 fixed in code, 1 dismissed as a false
-positive with a written rationale** (see below).
+Across the project's history the scanner opened **24 alerts: 23 fixed in code, 1 dismissed
+as a false positive with a written rationale** (see below). The first scan produced 21 of
+them; the three later ones came from intermediate commits of the same hardening work and
+were fixed in the follow-up commit.
 
 ## Hardening patterns introduced
 

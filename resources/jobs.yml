@@ -55,7 +55,6 @@ resources:
         - task_key: simulate_trial
           depends_on:
             - task_key: validate_protocol
-          environment_key: insilico
           spark_python_task:
             python_file: src/insilico_trial_mas/cli.py
             parameters:
@@ -71,6 +70,8 @@ resources:
               - --json
           # Operational metadata lands in the Gold layer via the pipeline itself;
           # the cluster only needs the Delta extensions for the Silver tables.
+          # A classic job cluster and a serverless environment are mutually
+          # exclusive, so this task sets new_cluster and carries no environment_key.
           new_cluster:
             spark_version: 15.4.x-scala2.12
             node_type_id: ${var.node_type}
@@ -90,12 +91,13 @@ resources:
               spark.sql.adaptive.coalescePartitions.enabled: "true"
               spark.sql.execution.arrow.pyspark.enabled: "true"
               spark.sql.execution.arrow.maxRecordsPerBatch: "2048"
-              spark.databricks.cluster.profile: serverless
             custom_tags:
-              ResourceClass: Serverless
+              ResourceClass: Job
             spark_env_vars:
               INSILICO_LOG_LEVEL: INFO
-              INSILICO_CATALOG: ${var.catalog}
+              # The loader accepts INSILICO_<SECTION>__<FIELD>; a bare
+              # INSILICO_CATALOG would be ignored silently.
+              INSILICO_STORAGE__CATALOG: ${var.catalog}
             libraries:
               - pypi:
                   package: mlflow-skinny>=2.12
@@ -103,7 +105,6 @@ resources:
         - task_key: train_physiology_model
           depends_on:
             - task_key: simulate_trial
-          environment_key: insilico
           spark_python_task:
             python_file: src/insilico_trial_mas/cli.py
             parameters:
@@ -125,33 +126,32 @@ resources:
   # night's numbers, which is the cheapest possible guard against silent
   # model or dependency drift.
   # -------------------------------------------------------------------------
-  jobs_regression:
     insilico_trial_nightly_regression:
-      name: "[${bundle.target}] InSilicoTrial MAS - nightly reproducibility check"
-      schedule:
-        quartz_cron_expression: "0 0 2 * * ?"
-        timezone_id: UTC
-        pause_status: PAUSED
-      parameters:
-        - name: config_path
-          default: conf/simulation_local.yaml
-        - name: protocol_path
-          default: conf/trial_protocol_demo.yaml
-      tasks:
-        - task_key: reproducibility_check
-          environment_key: insilico
-          spark_python_task:
-            python_file: scripts/verify_reproducibility.py
-            parameters:
-              - --config
-              - "{{job.parameters.config_path}}"
-              - --protocol
-              - "{{job.parameters.protocol_path}}"
-              - --patients
-              - "500"
-      environments:
-        - environment_key: insilico
-          spec:
-            client: "3"
-            dependencies:
-              - dist/*.whl
+        name: "[${bundle.target}] InSilicoTrial MAS - nightly reproducibility check"
+        schedule:
+          quartz_cron_expression: "0 0 2 * * ?"
+          timezone_id: UTC
+          pause_status: PAUSED
+        parameters:
+          - name: config_path
+            default: conf/simulation_local.yaml
+          - name: protocol_path
+            default: conf/trial_protocol_demo.yaml
+        tasks:
+          - task_key: reproducibility_check
+            environment_key: insilico
+            spark_python_task:
+              python_file: scripts/verify_reproducibility.py
+              parameters:
+                - --config
+                - "{{job.parameters.config_path}}"
+                - --protocol
+                - "{{job.parameters.protocol_path}}"
+                - --patients
+                - "500"
+        environments:
+          - environment_key: insilico
+            spec:
+              client: "3"
+              dependencies:
+                - dist/*.whl

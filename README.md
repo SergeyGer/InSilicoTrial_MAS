@@ -2,528 +2,173 @@
 
 # InSilicoTrial MAS
 
-**Multi-agent in-silico clinical trial simulation on Databricks & AWS**
+**Test a clinical trial on a computer before you test it on people.**
 
-Simulate a synthetic cohort of digital-twin patients against a trial protocol —
-exposure, efficacy, adverse events and a go/no-go readout — before the first
-human dose.
+A multi-agent simulation platform that builds a synthetic cohort of digital-twin
+patients, runs a trial protocol against all of them, and returns an auditable
+go/no-go readout — dose by dose, adverse event by adverse event.
 
 [![CI](https://github.com/SergeyGer/InSilicoTrial_MAS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SergeyGer/InSilicoTrial_MAS/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/SergeyGer/InSilicoTrial_MAS/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/SergeyGer/InSilicoTrial_MAS/actions/workflows/codeql.yml)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](docs/DOCKER.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0b6e99.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-0b6e99.svg)](pyproject.toml)
-[![Ruff](https://img.shields.io/badge/lint-ruff-7a5ea8.svg)](pyproject.toml)
-[![Typed: mypy](https://img.shields.io/badge/types-mypy-7a5ea8.svg)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-206%20passing-1c7c54.svg)](tests)
-[![Docker](https://img.shields.io/badge/Docker-compose%20ready-2496ED.svg)](docs/DOCKER.md)
-[![Databricks](https://img.shields.io/badge/Databricks-Asset%20Bundle-a2701a.svg)](databricks.yml)
-[![Terraform](https://img.shields.io/badge/IaC-Terraform%20%C2%B7%20AWS-a2701a.svg)](terraform)
+[![Wiki](https://img.shields.io/badge/docs-technical%20wiki-1c7c54.svg)](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki)
 
-[Quickstart](#quickstart) · [Docker](#docker) · [Architecture](#architecture) ·
-[Technology stack](#technology-stack) · [User interface](#user-interface) ·
-[Documentation](#documentation) · [Contributing](CONTRIBUTING.md)
+![Product tour: launch a trial in the Studio and explore the readout](docs/media/demo-tour.gif)
+
+<sub>Recorded from the running application: launch a trial in the Studio, watch the
+phases complete, then explore the generated readout. Full quality:
+[demo-tour.mp4](docs/media/demo-tour.mp4).</sub>
 
 </div>
 
 ---
 
-## What it is
+## The problem this solves
 
-A clinical trial costs millions before the first patient is enrolled, and most
-dose-finding failures are only obvious in hindsight. **InSilicoTrial MAS** builds a
-synthetic cohort of digital-twin patients, runs a protocol against all of them in
-parallel, and returns an auditable readout: which dose works, at what exposure,
-with which adverse events, and whether a Data Safety Monitoring Board rule would
-have stopped the study.
+A single Phase II trial costs tens of millions and takes years. The most common
+reason a promising drug fails is not a bad molecule — it is a **bad trial design**:
+the dose was wrong, the endpoint was measured at the wrong time, the cohort was too
+small to see the effect, or a safety signal only became visible after thousands of
+patients had been exposed.
 
-Each patient is an independent agent with its own phenotype, medical history and
-pharmacogenomic markers. A **Protocol Agent** organises the trial, thousands of
-**Patient Persona Agents** respond to it (mechanistic PK/PD + a trained ML model +
-an LLM persona), and a **Biostatistician Agent** turns the logs into statistics,
-safety monitoring and a compliance-style report.
+Those questions are answerable *before* the first human dose. **InSilicoTrial MAS**
+builds a synthetic population, runs the candidate protocol against it, and shows
+what would happen: who responds, at which exposure, which adverse events appear, and
+whether an independent safety board would have stopped the study.
 
-Built for **Databricks on AWS**: Spark distributes the cohort, Delta Lake makes
-every step auditable and rewindable, MLflow tracks the models, Unity Catalog
-governs the data. The same code still runs end-to-end on a laptop with no cloud
-account, no API keys and no internet.
+It is a **decision-support tool for trial design** — the kind of evidence that turns
+"we think 40 mg is right" into "40 mg gives a 64 % response rate with 2.7 % grade 3+
+toxicity; 20 mg is under-dosed; the stopping rule would not have triggered".
 
-> **Synthetic data only.** This is a trial-design decision-support tool: not
-> clinical evidence, not a regulatory submission, not medical advice. See
-> [Ethics & limitations](docs/ETHICS_AND_LIMITATIONS.md).
+## What it does, in one picture
 
----
+| Step | What happens | What you get |
+| --- | --- | --- |
+| **1. Build a population** | Thousands of virtual patients with their own physiology, medical history and pharmacogenomics | A cohort you can screen, exactly like a real one |
+| **2. Run the protocol** | Screening, randomisation, dosing, titration, adherence, drop-outs — executed by the platform, not scripted by hand | A trial that behaves like a trial |
+| **3. Simulate every patient** | Each virtual patient reacts to the drug: exposure, biomarker response, adverse events, and a narrated account of how they feel | One auditable record per patient per visit |
+| **4. Analyse and judge** | An independent statistical agent compares arms, controls for multiplicity, monitors safety and evaluates stopping rules | A readout with confidence intervals, forest plots and DSMB signals |
+| **5. Share the evidence** | A self-contained interactive dashboard, a written report and analysis-ready exports | Something a clinical team can actually review |
 
-<details>
-<summary><strong>The name, for non-specialists</strong></summary>
+## See it
 
-**InSilicoTrial MAS** is three ideas joined together:
-
-| Part | Meaning |
+| | |
 | --- | --- |
-| ***In silico*** | Latin for "in silicon". Running an experiment on a computer through simulation and modelling — as opposed to *in vivo* (in a living organism) and *in vitro* (in a test tube). |
-| ***Trial*** | A clinical trial: a study of a drug or a treatment protocol. |
-| ***MAS*** | **M**ulti-**A**gent **S**ystem — an architecture in which the work is done not by one algorithm but by a network of autonomous AI agents. Here they are patient agents, a protocol agent and a biostatistician agent. |
+| ![Overview](docs/images/dashboard-overview.png) | ![Efficacy](docs/images/dashboard-efficacy.png) |
+| **Overview** — the primary endpoint with its confidence interval, responder rate, safety signals and a CONSORT-style account of who was screened and enrolled | **Efficacy** — per-arm summaries, dose-response, exposure, and a comparison table with effect sizes, intervals, p-values and multiplicity-adjusted q-values |
+| ![Safety](docs/images/dashboard-safety.png) | ![Patients](docs/images/dashboard-patients.png) |
+| **Safety** — adverse events by arm and term, CTCAE grade distribution, risk differences and threshold monitors for every stopping rule | **Patients** — every digital twin is inspectable: dose, exposure, blood pressure, adverse events and the persona's own account of the visit |
 
-Read together: **"a multi-agent system for computer-simulated clinical trials."**
+The two remaining screens — the reproducibility audit and the agent/table/report
+lineage graph — are in the
+[UI guide](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/User-Interface).
 
-In this project the three words map directly onto the three agent types: the
-Protocol Agent runs the study, each Patient Persona Agent is one simulated
-participant, and the Biostatistician Agent reads the results.
-
-</details>
-
-
-## Technology stack
-
-| Layer | Technologies | Role in this project |
-| --- | --- | --- |
-| **Language & runtime** | Python 3.10 – 3.12, Java 17 (Spark runtime) | Whole platform; the engine layer degrades gracefully when no JVM is present |
-| **Distributed compute** | **PySpark 3.5** (`applyInPandas`, `mapInPandas`, Arrow), local `multiprocessing` + `asyncio` | Three interchangeable engines; cohorts up to millions of agent-epochs |
-| **Storage & table format** | **Delta Lake 3.2**, Parquet + Arrow, local versioned store | Medallion architecture, `DESCRIBE HISTORY`, `VERSION AS OF` time travel |
-| **Governance** | **Unity Catalog** (catalogs, schemas, volumes, grants), service principals | Three-tier namespace, per-agent identities, application-level lineage |
-| **ML lifecycle** | **MLflow** (tracking, model registry, tracing) | Run parameters/metrics/artefacts, model versions and digests, LLM spans |
-| **Modelling** | NumPy ridge regression (default head), optional scikit-learn / XGBoost, custom PK/PD | Biomarker prediction: mechanistic backbone + learned residual |
-| **LLM orchestration** | **LangChain** (`langchain-core`, `langchain-aws`), **Amazon Bedrock** (Claude), deterministic offline provider | Persona narration with a validated JSON contract, caching and rate limiting |
-| **Statistics** | Implemented in-house (Wilson, Newcombe, Welch, Fisher exact, Mann-Whitney, Benjamini-Hochberg, bootstrap) | No SciPy dependency, so readouts stay bit-reproducible everywhere |
-| **Configuration & validation** | pydantic v2, PyYAML, Jinja2, `dataclasses` | Protocol schema, trial config, YAML/env overrides, report templates |
-| **Infrastructure as code** | **Terraform** (Databricks + AWS providers), **Databricks Asset Bundles**, AWS S3 / IAM / EC2 spot / Batch | Reproducible cloud environments and a deployable simulation job |
-| **User interface** | Server-rendered **SVG** + vanilla JS, Python `http.server` | Self-contained dashboard and a live Studio — zero UI dependencies, no CDN |
-| **Containers** | **Docker** (multi-stage, four targets), **Docker Compose**, GHCR publishing | One image for CLI, Studio and Spark; CI builds it on every pull request |
-| **Quality gates** | pytest (+ pytest-cov, pytest-asyncio), Ruff, mypy, GitHub Actions, CodeQL, Dependabot | 220 tests, lint/type-clean, security scanning, dependency hygiene |
-
----
-
-## Docker
-
-```bash
-docker build -t insilico-trial-mas .            # runtime image, ~650 MB, non-root
-docker run --rm insilico-trial-mas demo --patients 400 --epochs 6
-docker run --rm -p 8765:8765 insilico-trial-mas studio --host 0.0.0.0 --no-browser
-```
-
-| Target | Contains | For |
-| --- | --- | --- |
-| `runtime` (default) | package + example profiles, uid 10001, offline LLM, healthcheck | CLI, Studio, CI smoke tests |
-| `spark` | + OpenJDK 17 and the PySpark/Delta extras | the Databricks engine locally |
-| `dev` | + dev tooling, tests, linters | interactive work with mounted sources |
-| `test` | `dev` + a pytest/ruff/mypy run **during the build** | a build-time quality gate in CI |
-
-Compose brings up the Studio with a healthcheck and injects `.env` only when you
-have one, so credentials are never baked into an image:
-
-```bash
-docker compose up -d studio
-docker compose run --rm demo
-docker compose --profile spark run --rm spark     # 2000 patients, local[*]
-docker compose --profile tools run --rm dev       # shell
-docker compose cp studio:/data/artifacts ./artifacts
-```
-
-Build variants: `--build-arg EXTRAS=llm` adds the Bedrock/OpenAI providers,
-`--build-arg EXTRAS=llm,ml` also adds the gradient-boosting head; tagged releases
-publish `ghcr.io/sergeyger/insilico-trial-mas` (plus a `:spark` tag). Full guide,
-including volume ownership, proxy and architecture notes: [docs/DOCKER.md](docs/DOCKER.md).
-
----
-
-## Architecture
-
-![InSilicoTrial MAS architecture](docs/architecture.svg)
-
-<sub>Rendered from <a href="scripts/render_architecture.py">scripts/render_architecture.py</a> — the diagram is generated, so it stays in sync with the code. A <a href="docs/dashboard-wireframe.svg">dashboard wireframe</a> shows the readout layout.</sub>
-
-**How a run flows**
-
-1. **Entry point** — CLI, Databricks job, notebook or the live Studio UI.
-2. **Protocol Agent** validates the protocol, screens the synthetic population
-   against the eligibility criteria (with a CONSORT-style failure log) and
-   randomises it with deterministic stratified permuted blocks.
-3. **Patient Persona Agents** run one per patient. For every epoch an agent
-   computes individual PK, predicts biomarkers with the hybrid physiology model,
-   samples adverse events from the drug's logistic models and — when triggered —
-   narrates symptoms through an LLM persona with a validated JSON contract.
-4. **Engine layer** executes those agents: sequentially, in a process pool, or as
-   Spark `applyInPandas` / `mapInPandas` jobs. The agent code is identical, and the
-   engines are verified to produce **bit-identical** results.
-5. **Storage** lands one Silver row per patient-epoch (Bronze for inputs, Gold for
-   aggregates), versioned so any earlier readout can be replayed or restored.
-6. **Biostatistician Agent** aggregates, tests against control with confidence
-   intervals, monitors safety against the protocol's stopping rules and emits the
-   report, the interactive dashboard, CDISC-inspired exports and the run manifest.
-
-**The three agents** — and [why agents at all](docs/WHY_AGENTS.md): the trial has
-three actors with different information and different decisions, so the agent
-boundary is what enforces blinding, interim analyses and per-agent fault isolation,
-while the PK/PD, the learned head and the statistics stay ordinary deterministic
-functions.
-
-| Agent | Module | Responsibility |
-| --- | --- | --- |
-| Protocol Agent | [`agents/protocol_agent.py`](src/insilico_trial_mas/agents/protocol_agent.py) | Validation, eligibility screening, stratified block randomisation, per-epoch dose directives, titration, protocol deviations |
-| Patient Persona Agent | [`agents/patient_agent.py`](src/insilico_trial_mas/agents/patient_agent.py) | Individual PK/PD, hybrid ML prediction, adverse-event sampling, LLM narration, adherence and discontinuation |
-| Biostatistician Agent | [`agents/biostatistician_agent.py`](src/insilico_trial_mas/agents/biostatistician_agent.py) | Arm summaries, treatment comparisons, multiplicity control, safety analytics, DSMB stopping rules, report payload |
-
----
-
-## What is actually verified
-
-| Claim | Evidence |
-| --- | --- |
-| Sequential, multiprocessing and Spark engines produce **bit-identical** trials | [`tests/test_engines.py`](tests/test_engines.py) — `applyInPandas` and `mapInPandas` compared against the reference engine |
-| Re-running with the same seed reproduces the trial exactly | [`scripts/verify_reproducibility.py`](scripts/verify_reproducibility.py), [`tests/test_pipeline.py`](tests/test_pipeline.py) |
-| Simulated trials are **clinically plausible** (exposure, effect size, AE rates, no fatal headaches) | [`tests/test_calibration.py`](tests/test_calibration.py), [`scripts/calibrate_protocol.py`](scripts/calibrate_protocol.py) |
-| Adverse-event parameters are fitted to target incidence, not hand-tuned | [`scripts/fit_ae_parameters.py`](scripts/fit_ae_parameters.py) |
-| Statistics match reference values (Wilson, Fisher exact, Welch, Benjamini-Hochberg) | [`tests/test_stats.py`](tests/test_stats.py) |
-| An LLM outage cannot destroy a run | cache → rate limit → timeout → retry → offline fallback, [`tests/test_llm.py`](tests/test_llm.py) |
-| The readout dashboard is self-contained and complete | [`tests/test_ui_dashboard.py`](tests/test_ui_dashboard.py) |
-| The Studio drives the real pipeline over HTTP | [`tests/test_ui_studio.py`](tests/test_ui_studio.py) |
-| Every notebook cell of the specification executes | [`scripts/run_notebook.py`](scripts/run_notebook.py), run in CI |
-| Infrastructure is valid | `terraform validate` and the Databricks bundle schema check in CI |
-
----
-
-## Quickstart
-
-### 1. Docker — nothing to install but Docker
+## Try it in one command
 
 ```bash
 git clone https://github.com/SergeyGer/InSilicoTrial_MAS.git && cd InSilicoTrial_MAS
-
-docker compose up -d studio        # Studio UI on http://localhost:8765
-docker compose run --rm demo       # one trial into the `artifacts` volume
-docker compose cp studio:/data/artifacts ./artifacts
+docker compose up -d studio      # open http://localhost:8765
+docker compose run --rm demo     # or run a trial straight away
 ```
 
-The image defaults to the offline persona provider, so it needs no credentials and
-no network. `spark`, `dev` and `test` targets cover the JVM engine, an interactive
-shell and a build-time test gate — see [docs/DOCKER.md](docs/DOCKER.md).
+No Python, no Java, no credentials and no internet connection are required: the
+container ships a deterministic offline persona provider, so a complete trial is
+reproducible on any machine. Prefer a plain install, Windows, or WSL? The
+[Getting Started](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Getting-Started)
+page has all three paths, step by step.
 
-### 2. Laptop — no credentials, no cloud
+## What this project demonstrates
 
-```bash
-git clone https://github.com/SergeyGer/InSilicoTrial_MAS.git
-cd InSilicoTrial_MAS
-bash scripts/bootstrap.sh          # venv + package + environment checklist
+Built end to end — architecture, science, distributed execution, interfaces,
+infrastructure, security and documentation — by one engineer.
 
-source .venv/bin/activate
-insilico-trial demo --patients 400 --epochs 6
-```
-
-The demo writes `artifacts/demo/<RUN-ID>/` with the run manifest, the
-Markdown/HTML/JSON report, the interactive dashboard, CDISC-inspired exports and
-the Silver observations.
-
-### 3. Spark on the driver (Databricks Community Edition pattern)
-
-```bash
-bash scripts/bootstrap.sh --spark   # installs PySpark and a portable JRE in .toolchain/
-make simulate-spark PATIENTS=2000
-make test-spark                     # proves Spark == sequential
-```
-
-### 4. Databricks on AWS
-
-```bash
-cd terraform && cp terraform.tfvars.example terraform.tfvars && terraform apply
-cd .. && bash scripts/databricks_deploy.sh --target prod --run
-```
-
-Sizing, cost control and the failure playbook live in the
-[runbook](docs/RUNBOOK_DATABRICKS_AWS.md).
-
----
-
-## User interface
-
-Two dependency-free surfaces, both generated from the same run artefacts.
-
-### Readout dashboard — `report/dashboard.html`
-
-Written automatically after every run: a single self-contained HTML file with
-inline SVG charts, openable from a file path, a Unity Catalog volume, an e-mail
-attachment, `displayHTML` in a Databricks notebook, or printable to PDF.
-
-```bash
-insilico-trial dashboard --run artifacts/ --open     # newest run in a directory
-```
-
-| Screen | What a reviewer gets |
+| Capability | Evidence in this repository |
 | --- | --- |
-| **Overview** | KPI strip, primary endpoint with 95% CI, responder rate, forest plot of every endpoint, CONSORT disposition, DSMB signals |
-| **Efficacy** | Per-arm summary, dose-response with trend, comparison table (effect, CI, p, q, test, MCID), mean trajectories with confidence bands, exposure |
-| **Safety** | Adverse-event heatmap (arm × term), CTCAE grade distribution, risk differences with q-values, stopping-rule threshold monitors |
-| **Patients** | Searchable digital twins: individual dose/exposure/BP/AE trajectory and the persona's verbatim narration |
-| **Reproducibility** | Protocol and model digests, seed, environment, data-quality audit, exact replay command |
-| **Lineage & traces** | Agent → table → report graph, token and latency distributions, Mermaid source |
+| **Distributed systems engineering** | The same agent code runs on one core, in a process pool, or across a Spark cluster — and produces **bit-identical** results, proven by an automated equivalence test on every commit |
+| **Applied machine learning** | A hybrid model: mechanistic pharmacology as the backbone, a trained regression head for the residual, calibrated against clinical expectations rather than hand-tuned |
+| **LLM engineering, done soberly** | Language models narrate patient experience only; medical decisions stay mechanistic. Caching, rate limiting, timeouts, offline fallback and prompt hashing keep a 10,000-agent run alive through a provider outage |
+| **Statistical rigour** | Confidence intervals, exact tests and multiplicity control implemented in-house so results are reproducible everywhere — no black-box dependency |
+| **Cloud and infrastructure as code** | Terraform provisions Unity Catalog, S3, IAM and service principals; a Databricks Asset Bundle deploys the job; containers package the whole platform |
+| **Product thinking** | Three audiences, three surfaces: a written report for clinicians, an interactive dashboard for reviewers, a live Studio for analysts who want to explore |
+| **Engineering discipline** | 231 automated tests, static analysis and container scanning on every change, automated dependency updates, and a documented decision behind every design trade-off |
+| **Communication** | A recruiter-facing README, a technical wiki of twenty pages, generated architecture diagrams, and a product tour regenerated from the running application |
 
-### Live Studio — `insilico-trial studio`
+**Technology keywords:** Python · Apache Spark · Delta Lake · MLflow · Unity Catalog ·
+Amazon Bedrock · LangChain · Terraform · Docker · GitHub Actions · AWS · Parquet ·
+pydantic · pytest.
 
-```bash
-insilico-trial studio --config conf/simulation_local.yaml    # http://127.0.0.1:8765
-```
+## Why the design looks the way it does
 
-Pick a protocol, cohort size, engine and LLM policy, press run, and watch the
-pipeline phases progress; the finished dashboard appears in place. The Studio runs
-the real pipeline on a daemon thread over a standard-library HTTP server.
+Three decisions explain most of the repository, and each has a page behind it:
 
-Static previews are checked in and regenerated by
-[`scripts/render_ui_previews.py`](scripts/render_ui_previews.py):
-
-* [**dashboard preview**](docs/dashboard-preview.html) — a real readout from a
-  90-patient run (download and open it in a browser; CI also uploads the dashboard
-  of every demo run as a build artefact);
-* [**Studio shell**](docs/studio-preview.html) — the launcher page;
-* [**dashboard anatomy**](docs/dashboard-wireframe.svg) — a labelled wireframe.
-
-Design record and screen-by-screen rationale: [docs/UI.md](docs/UI.md).
-
----
-
-## How it works
-
-**Pharmacokinetics.** One-compartment oral model with first-order absorption and a
-closed-form repeated-dose superposition; individual clearance from body weight,
-age, eGFR and CYP2D6 phenotype.
-
-```
-C(t) = F·D·ka / (V·(ka − ke)) · (e^(−ke·t) − e^(−ka·t)),   ke = ln2 / t½
-```
-
-**Pharmacodynamics.** Sigmoid Emax on the average steady-state concentration
-(peak concentration for QTc and hepatotoxicity), plus placebo effect, disease
-progression, comorbidity burden, per-patient sensitivity and measurement noise.
-
-**Learned component.** A ridge-regression residual head trained on synthetic
-historical cohorts, stored as a versioned, digest-hashed artefact and optionally
-registered in the MLflow Model Registry.
-
-**Determinism.** Every stochastic draw comes from
-`sha256(seed, run, patient, epoch, purpose)`, so partition layout cannot change a
-single number. Wall-clock fields (`observation_ts`, `llm_latency_ms`) are excluded
-from equivalence checks by design.
-
-**Adverse events.** Logistic models per MedDRA-style term with CTCAE grade
-distributions, fitted so cumulative incidence matches clinical expectations at each
-dose level.
-
----
-
-## Command line
-
-| Command | Purpose |
-| --- | --- |
-| `insilico-trial env-check` | Runtime checklist and engine recommendation |
-| `insilico-trial validate-protocol` | Validate a protocol, print review warnings |
-| `insilico-trial generate-cohort` | Write the screening population (Parquet/CSV) |
-| `insilico-trial simulate` | Full pipeline: cohort → agents → Silver → Gold → report |
-| `insilico-trial report --run <dir>` | Rebuild a report from a finished run |
-| `insilico-trial dashboard --run <dir> --open` | Build the interactive readout |
-| `insilico-trial studio` | Serve the live Studio UI |
-| `insilico-trial time-travel --table silver/patient_states --version 1 --where "sbp > 140"` | Point-in-time read (`VERSION AS OF`) |
-| `insilico-trial lineage --run <dir> --format mermaid` | Data lineage of a run |
-| `insilico-trial traces --tree first` | LLM tokens, latency and span hierarchy |
-| `insilico-trial train-physiology --register` | Train and register the physiology model |
-| `insilico-trial demo` | Small offline end-to-end run |
-
-Every command supports `--json`.
-
----
-
-## Configuration
-
-Profiles in [`conf/`](conf):
-
-| File | Use case |
-| --- | --- |
-| `simulation_local.yaml` | Laptop/CI: local Parquet lake, offline LLM, `auto` engine |
-| `simulation_cluster.yaml` | AWS Databricks: Spark engine, Delta + Unity Catalog, Bedrock personas, MLflow |
-| `simulation_community_edition.yaml` | Databricks CE: driver multiprocessing, Hive metastore |
-| `trial_protocol_demo.yaml` | Phase II dose-finding protocol: 3 arms, titration, endpoints, DSMB rules, drug PK/AE models |
-
-Any field can be overridden from the environment:
-`INSILICO_ENGINE__BACKEND=spark INSILICO_N_PATIENTS=50000 insilico-trial simulate …`
-
-### Credentials
-
-No `.env` is committed, and none is required: the default profile uses the
-deterministic **offline** persona provider, so CI, a laptop and Databricks
-Community Edition run with zero credentials. For real providers the platform reads
-each SDK's standard chain — the cluster IAM role or instance profile (preferred),
-`AWS_PROFILE`/`AWS_ROLE_ARN` for Bedrock, `OPENAI_API_KEY` for OpenAI,
-`DATABRICKS_HOST` + token/OAuth for the workspace, `MLFLOW_TRACKING_URI` for
-tracking. Terraform provisions an AWS Secrets Manager backed scope (`insilico-llm`)
-for teams that must hold keys. `insilico-trial env-check` reports which chains are
-configured — presence only, never a value.
-
-```bash
-cp .env.example .env        # optional, git-ignored; VS Code loads it automatically
-insilico-trial env-check    # credentials: aws-bedrock=no, databricks=yes, …
-```
-
-Full reference: [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
-
----
-
-## Project layout
-
-```
-src/insilico_trial_mas/
-  agents/           protocol · patient (persona) · biostatistician
-  ml/               pk_pd · physiology (mechanistic + ridge) · training · registry
-  llm/              prompts · parsing · cache · rate_limit · resilient · offline · langchain
-  engine/           sequential · local (multiprocessing) · spark · checklist · runtime
-  storage/          local versioned Parquet · Delta Lake · memory
-  governance/       Unity Catalog namespace · lineage
-  mlflow_tracking/  tracker · tracing (spans)
-  reporting/        report builder · CDISC-inspired exports · Jinja templates
-  stats/            SciPy-free estimators
-  cohort/           population priors · generator · serialisation
-  ui/               charts (SVG) · data · dashboard · studio · theme
-  pipeline.py       the single definition of "a simulation run"
-  cli.py            command line interface
-conf/  notebooks/  terraform/  resources/  scripts/  tests/  docs/  .github/  .vscode/
-Dockerfile  docker-compose.yml  .dockerignore
-```
-
----
-
-## Data model
-
-Medallion architecture, identical on Delta Lake and on the local store:
-
-| Layer | Tables |
-| --- | --- |
-| **bronze** | `synthetic_cohort`, `protocol_definitions`, `llm_raw_traces` |
-| **silver** | `patient_states` (50-column per-epoch contract), `adverse_events`, `protocol_deviations`, `screen_failures` |
-| **gold** | `arm_summaries`, `endpoint_comparisons`, `safety_summary`, `stopping_rule_evaluations`, `run_manifest`, `lineage_edges` |
-
-Full column contracts, JSON payload shapes and the CDISC-inspired exports are in
-[docs/DATA_MODEL.md](docs/DATA_MODEL.md).
-
-
----
-
-## Roadmap
-
-The platform is deliberately layered, so most of the work below can be done
-without touching the others: new science goes into `ml/` and `agents/`, new scale
-into `engine/`, new artefacts into `reporting/` and `ui/`. Items marked
-**good first issue** are scoped for a new contributor.
-
-### Next
-
-| Initiative | What it unlocks | Entry point |
-| --- | --- | --- |
-| Validate and adopt **Spark 4.x**, then widen the bound to `pyspark>=3.5,<5.0` | The constraint stays `<4.0` until a CI leg actually runs the engine tests against 4.x — a metadata-only widening would ship an untested combination | `.github/workflows/ci.yml`, `pyproject.toml` |
-| Sparse PK sampling per patient | Models real trials, where a patient gives 3-5 samples instead of a full curve; feeds exposure-response analysis | `ml/pk_pd.py` |
-| Baseline-adjusted (ANCOVA) endpoint analysis | The standard primary analysis in modern protocols; more power than change-from-baseline | `agents/biostatistician_agent.py` |
-| Dropout and missing-data mechanisms (MCAR/MAR) with sensitivity analysis | Stops completers-only results from flattering a dose | `agents/patient_agent.py` |
-| Subgroup filters in the dashboard (age band, ancestry, comorbidity) | Answers "does this dose work in the elderly?" without a new run | `ui/data.py`, `ui/dashboard.py` |
-| **good first issue:** Kaplan-Meier plot for time-to-first-event | The safety readout clinicians expect next to the CTCAE table | `stats/estimators.py`, `reporting/` |
-
-### Mid term
-
-| Initiative | What it unlocks | Entry point |
-| --- | --- | --- |
-| Alternative PK structures (two-compartment, target-mediated drug disposition) | Biologics and drugs with distribution phases, behind the same model protocol | `ml/physiology.py` (implement `PhysiologyModel`) |
-| Bayesian dose escalation (CRM / BOIN) driven by the Protocol Agent | Adaptive phase I designs instead of a fixed escalation ladder | `agents/protocol_agent.py` |
-| Partial adherence: missed doses, interruptions, re-starts | Adherence becomes a modelled behaviour rather than a binary stop | `agents/patient_agent.py` |
-| Time-to-event and recurrent-event endpoints (Cox, negative binomial) | Oncology and chronic-disease readouts | `stats/`, `agents/biostatistician_agent.py` |
-| External / virtual control arms with propensity weighting | Shrinks control groups using historical trials | new `cohort/borrowing.py` |
-| LLM evaluation harness: prompt A/B, structured tool calling, cost governor | Turns the persona layer from a demo feature into a governed component | `llm/`, `tests/` |
-
-### Long term
-
-| Initiative | What it unlocks | Entry point |
-| --- | --- | --- |
-| Delta Live Tables / Lakeflow pipeline for the medallion flow | Declarative quality expectations and lineage on every layer | `pipeline.py`, `databricks.yml` |
-| Photon, Spark Connect and serverless jobs; GPU inference for the ML head | Million-agent cohorts at lower cost per simulated patient-epoch | `engine/spark_runner.py` |
-| Lakehouse Monitoring on Silver (drift, freshness, completeness) | Catches a broken prior or an upstream schema change before a readout | `terraform/`, notebooks |
-| Signed run manifests (Sigstore/cosign) and a WORM audit export | Tamper-evident reproducibility evidence for auditors | `pipeline.py`, `governance/` |
-| 21 CFR Part 11-style audit trail, e-signature, full CDISC SDTM/ADaM + `define.xml`, IQ/OQ/PQ pack | Moves the platform from decision support towards a regulated workflow | `reporting/cdisc.py`, `docs/` |
-| Model governance: retraining triggers, prior drift detection, model cards | Keeps the learned head trustworthy release over release | `ml/training.py`, `ml/registry.py` |
-| Interoperability: FHIR/OMOP ingestion to calibrate priors, site-level data exchange | Replaces illustrative priors with a customer's own real-world data | `cohort/generator.py`, `resources/` |
-
-Ideas and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). If you
-want to propose a protocol rather than code, open a
-[discussion](https://github.com/SergeyGer/InSilicoTrial_MAS/discussions) with the
-dose levels, endpoints and stopping rules you have in mind.
-
----
-
-## Quality gates
-
-```bash
-make check          # ruff + mypy + tests (fast, no JVM needed)
-make test-spark     # Spark engine must reproduce the sequential engine
-make verify-repro   # two runs, same seed, identical rows
-make calibrate      # clinical plausibility bands
-make verify-ui      # dashboard and Studio tests
-make notebook       # every notebook cell executes
-make iac-validate   # terraform fmt + validate
-make docker-test    # pytest + ruff + mypy inside the image
-make docker-demo    # one trial in a container, results in artifacts/docker
-```
-
-CI runs all of the above on every push and pull request across Python 3.10–3.12,
-plus CodeQL analysis and Dependabot updates.
-
----
+* **The trial is modelled as agents, not as one big equation.**
+  A protocol team, thousands of participants and an independent statistician have
+  different information and make different decisions. Keeping them separate is what
+  enforces blinding, makes interim safety reviews possible, and stops one provider
+  outage from destroying a run.
+  → [Why agents](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Why-Agents)
+* **Determinism is a feature, not an accident.**
+  Any run can be replayed exactly, years later, and two different execution engines
+  are proven to agree. That is what makes the output usable as evidence.
+  → [Reproducibility](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Reproducibility)
+* **The boring path is the default path.**
+  Offline personas, no credentials, no network, one command — the sophisticated
+  cloud deployment is opt-in, not a prerequisite.
+  → [Getting Started](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Getting-Started)
 
 ## Documentation
 
-| Document | Contents |
+This README stays at the level of *what it does and why it matters*. Everything an
+engineer, analyst or product manager needs is in the
+**[project wiki](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki)**:
+
+| Getting started | The science | The platform |
+| --- | --- | --- |
+| [Getting Started](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Getting-Started) | [Why Agents](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Why-Agents) | [Architecture](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Architecture) |
+| [Docker and Compose](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Docker-and-Compose) | [Agents](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Agents) | [Engines and Scaling](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Engines-and-Scaling) |
+| [Configuration and Credentials](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Configuration-and-Credentials) | [Pharmacology and Models](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Pharmacology-and-Models) | [Reproducibility](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Reproducibility) |
+| [Deployment on Databricks and AWS](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Deployment-Databricks-AWS) | [Statistics and Readouts](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Statistics-and-Readouts) | [LLM Integration](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/LLM-Integration) |
+| [Observability and Troubleshooting](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Observability-and-Troubleshooting) | [Data Model](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Data-Model) | [User Interface](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/User-Interface) |
+| [FAQ](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/FAQ) · [Glossary](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Glossary) | [Ethics and Limitations](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Ethics-and-Limitations) | [Security](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Security) · [Testing](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Testing-and-Verification) |
+
+## Project status
+
+| | |
 | --- | --- |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Layered design, engine abstraction, determinism, LLM resilience, diagrams |
-| [docs/WHY_AGENTS.md](docs/WHY_AGENTS.md) | Why the trial is modelled as agents: the requirements the boundary carries, and where agents are deliberately *not* used |
-| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Every table, column, JSON payload and export format |
-| [docs/UI.md](docs/UI.md) | UI design record, screens, design system, extension points |
-| [docs/RUNBOOK_DATABRICKS_AWS.md](docs/RUNBOOK_DATABRICKS_AWS.md) | Sizing, cost control, monitoring queries, failure playbook |
-| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Profiles, environment overrides, credential chains, secrets on Databricks |
-| [docs/DOCKER.md](docs/DOCKER.md) | Image targets, Compose stack, volumes and ownership, credentials, Spark image, security notes, troubleshooting |
-| [docs/SPEC_COMPLIANCE.md](docs/SPEC_COMPLIANCE.md) | Requirement → implementation → test mapping, and every defect fixed |
-| [docs/ETHICS_AND_LIMITATIONS.md](docs/ETHICS_AND_LIMITATIONS.md) | Responsible use, bias, what the model does not capture |
-| [docs/SECURITY_NOTES.md](docs/SECURITY_NOTES.md) | Every CodeQL finding and how it was resolved, including the one dismissed as a false positive |
-| [docs/REPOSITORY_SETTINGS.md](docs/REPOSITORY_SETTINGS.md) | Recommended GitHub configuration (About, topics, protection rules) |
-| [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [CHANGELOG.md](CHANGELOG.md) | How to contribute, how to report a vulnerability, release history |
+| **Version** | 1.0.0 — every capability described above is implemented, tested and documented |
+| **Runs on** | A laptop (no cloud account), Docker, Databricks on AWS |
+| **Verification** | 231 automated tests, continuous integration on every change, security scanning, reproducible runs |
+| **Next** | See the [roadmap](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Roadmap) — adaptive dose-escalation designs, sparse PK sampling, external control arms |
 
----
+## Responsible use
 
-## Limitations and responsible use
+Every patient in this platform is generated. It is a **trial-design decision-support
+tool**: not clinical evidence, not a regulatory submission and not medical advice.
+The bundled population priors and drug parameters are illustrative and must be
+replaced with licensed reference data and validated estimates before any regulated
+use. The full statement — including what the model deliberately does not capture —
+is in
+[Ethics and Limitations](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Ethics-and-Limitations).
 
-Synthetic cohorts cannot reproduce unmeasured confounding or unmodelled biology.
-Population priors and drug parameters shipped here are **illustrative** and must be
-replaced with licensed reference data and validated PK/PD estimates before any
-regulated use. LLM narration is qualitative: responses are cached and prompt hashes
-recorded, but a model update changes the narrative. This platform is a trial-design
-decision-support tool — not clinical evidence and not medical advice. Read
-[docs/ETHICS_AND_LIMITATIONS.md](docs/ETHICS_AND_LIMITATIONS.md) before using it for
-a real decision.
+## Contributing, security, licence
 
-## Contributing
+Contributions are welcome: start with
+[Contributing and Development](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Contributing-and-Development)
+or the [good first issues](https://github.com/SergeyGer/InSilicoTrial_MAS/issues).
+Scientific changes must come with calibration evidence and must not reduce
+reproducibility. Please report vulnerabilities privately, as described in
+[SECURITY.md](SECURITY.md).
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and the
-[Code of Conduct](CODE_OF_CONDUCT.md). Scientific changes (PK/PD, physiology model,
-adverse-event parameters) must come with calibration evidence and must not reduce
-reproducibility. Security issues: please follow [SECURITY.md](SECURITY.md) instead
-of opening a public issue.
+MIT licensed — see [LICENSE](LICENSE).
 
-## License
-
-MIT — see [LICENSE](LICENSE). Bundled population priors and drug parameters are
-illustrative and carry no clinical warranty.
-
-## Citation
-
-```bibtex
-@software{insilicotrial_mas,
-  title   = {InSilicoTrial MAS: multi-agent in-silico clinical trial simulation},
-  author  = {Gerasimov, Sergey},
-  year    = {2026},
-  version = {1.0.0},
-  license = {MIT},
-  url     = {https://github.com/SergeyGer/InSilicoTrial_MAS}
-}
-```
-
-See also [CITATION.cff](CITATION.cff).
+<div align="center">
+<sub>
+<strong>In silico</strong> (Latin, "in silicon") — an experiment run on a computer rather than
+in a living organism (<em>in vivo</em>) or a test tube (<em>in vitro</em>) ·
+<strong>Trial</strong> — a clinical study of a drug or treatment ·
+<strong>MAS</strong> — Multi-Agent System: work done by a network of autonomous agents rather than one program.
+<br>
+Read together: <em>a multi-agent system for computer-simulated clinical trials.</em>
+</sub>
+</div>

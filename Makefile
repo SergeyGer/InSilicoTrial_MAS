@@ -152,7 +152,7 @@ docker-test: ## Run pytest + ruff + mypy inside the image (fails the build on er
 docker-demo: ## One-shot demo run in a container, results in ./artifacts/docker
 	mkdir -p artifacts/docker
 	docker run --rm --user "$$(id -u):$$(id -g)" -v "$$PWD/artifacts/docker:/data/artifacts" \
-		insilico-trial-mas:local demo --patients $(PATIENTS) --epochs $(EPOCHS) --output-dir /data/artifacts/demo
+		insilico-trial-mas:local demo --patients $(DOCKER_PATIENTS) --epochs $(DOCKER_EPOCHS) --output-dir /data/artifacts/demo
 
 .PHONY: docker-studio
 docker-studio: ## Studio UI in a container on http://127.0.0.1:8765 (Ctrl-C to stop)
@@ -169,6 +169,16 @@ docker-down: ## Stop the compose stack and remove its volumes
 .PHONY: docker-clean
 docker-clean: ## Remove the images built by this Makefile
 	-docker image rm insilico-trial-mas:local insilico-trial-mas:spark insilico-trial-mas:test
+
+.PHONY: media
+media: ## Regenerate the README screenshots and the product tour from the running app
+	$(PY) scripts/capture_media.py --encode-only
+
+.PHONY: media-capture
+media-capture: ## Capture fresh screenshots/video (needs the insilico-capture image and a live Studio)
+	@test -n "$(DASHBOARD)" || (echo "usage: make media-capture DASHBOARD=file:///work/artifacts/.../dashboard.html STUDIO=http://127.0.0.1:8765"; exit 2)
+	docker run --rm --network host -v "$$PWD:/work" -w /work insilico-capture \
+		python scripts/capture_media.py --dashboard "$(DASHBOARD)" --studio "$(STUDIO)" --encode
 
 .PHONY: iac-validate
 iac-validate: ## terraform fmt + validate for the IaC module

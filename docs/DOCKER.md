@@ -109,11 +109,11 @@ Every run writes a self-contained readout, so the results are portable:
 
 ```
 /data/artifacts/demo/RUN-…/
+  run_manifest.json                      # provenance, digests, replay command
   report/trial_report.md, .html          # narrative report
   report/dashboard.html                  # single-file interactive dashboard
   report/cdisc/*.csv                     # CDISC-inspired exports
-  manifest.json                          # provenance, digests, replay command
-  lake/{bronze,silver,gold}/…            # versioned Parquet tables
+/data/artifacts/lake/{bronze,silver,gold}/…   # versioned Parquet tables (storage.local_root)
 ```
 
 ---
@@ -144,13 +144,15 @@ docker compose up -d studio
 For a single run, pass variables explicitly — the standard SDK chains apply:
 
 ```bash
-# Amazon Bedrock personas: use the instance role, a profile, or static keys
-docker run --rm --build-arg EXTRAS=llm \
+# Amazon Bedrock personas: build with the extra first, then run.
+# (`--build-arg` is a *build* flag, so it cannot be combined with `docker run`.)
+docker build --build-arg EXTRAS=llm -t insilico-trial-mas:bedrock .
+docker run --rm \
   -e INSILICO_LLM__PROVIDER=bedrock \
   -e INSILICO_LLM__MODEL=us.anthropic.claude-3-5-sonnet-20241022-v2:0 \
   -e AWS_REGION=us-east-1 -e AWS_PROFILE=default \
   -v "$HOME/.aws:/home/insilico/.aws:ro" \
-  insilico-trial-mas demo --patients 200
+  insilico-trial-mas:bedrock demo --patients 200
 ```
 
 `insilico-trial env-check` inside the container prints which credential chains it
@@ -237,8 +239,9 @@ The image is architecture-neutral apart from the JVM in the `spark` target, whic
   `docker run --rm --read-only --tmpfs /tmp -v insilico-artifacts:/data …`
 * **No network required** for the default offline provider, which makes the image
   usable in an air-gapped environment.
-* **Pinned base.** `python:3.12-slim-bookworm`; Dependabot watches the Docker
-  ecosystem in addition to pip, Actions and Terraform.
+* **Pinned base.** `python:3.12-slim-bookworm`; Dependabot tracks the Docker
+  ecosystem (`.github/dependabot.yml`) in addition to pip, GitHub Actions and
+  Terraform, and CI lints the Dockerfile with hadolint.
 
 ---
 

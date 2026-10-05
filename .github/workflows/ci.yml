@@ -134,6 +134,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Lint the Dockerfile
+        run: docker run --rm -i hadolint/hadolint:2.12.0 < Dockerfile
+
       - name: Build the runtime image
         run: docker build --target runtime -t insilico-trial-mas:ci .
 
@@ -205,15 +208,51 @@ jobs:
 
       - name: Databricks bundle schema check
         run: |
-          python -m pip install --upgrade pip pyyaml
           python - <<'PY'
-          import pathlib, yaml
+          """Validate the Asset Bundle against the resource model the CLI enforces.
+
+          The previous version only inspected the simulation job's task keys, which let a
+          job nested under an invalid resource type (`jobs_regression`) pass unnoticed,
+          and did not notice a task declaring both a serverless environment and a classic
+          cluster. Both were real defects in this repository.
+          """
+          import pathlib
+          import yaml
+
+          ALLOWED_RESOURCES = {"jobs", "pipelines", "experiments", "models", "clusters", "dashboards"}
+          TOP_LEVEL_ENV = {"N_PATIENTS", "N_COHORTS", "EPOCHS", "SEED", "LLM_MODE", "OUTPUT_DIR",
+                           "LOG_LEVEL", "PROTOCOL_PATH"}
+
           bundle = yaml.safe_load(pathlib.Path("databricks.yml").read_text())
           assert bundle["bundle"]["name"] == "insilico-trial-mas"
           assert set(bundle["targets"]) == {"dev", "prod"}
-          jobs = yaml.safe_load(pathlib.Path("resources/jobs.yml").read_text())
-          tasks = jobs["resources"]["jobs"]["insilico_trial_simulation"]["tasks"]
+
+          definition = yaml.safe_load(pathlib.Path("resources/jobs.yml").read_text())
+          resources = definition.get("resources") or {}
+          unknown = set(resources) - ALLOWED_RESOURCES
+          assert not unknown, f"invalid resource types under `resources`: {sorted(unknown)}"
+          assert resources.get("jobs"), "the bundle must define at least one job"
+
+          problems = []
+          for job_name, job in resources["jobs"].items():
+              assert isinstance(job, dict), f"{job_name}: a job must be a mapping"
+              assert job.get("name"), f"{job_name}: missing name"
+              for task in job.get("tasks", []):
+                  compute = {k for k in ("environment_key", "new_cluster", "existing_cluster_id") if k in task}
+                  if len(compute) != 1:
+                      problems.append(f"{job_name}/{task.get('task_key')}: declares compute {sorted(compute)}")
+                  for key in (task.get("spark_env_vars") or {}):
+                      if not key.startswith("INSILICO_"):
+                          problems.append(f"{job_name}/{task.get('task_key')}: {key} is not an INSILICO_* variable")
+                          continue
+                      body = key[len("INSILICO_"):]
+                      if "__" not in body and body not in TOP_LEVEL_ENV:
+                          problems.append(f"{job_name}/{task.get('task_key')}: {key} would be ignored by the loader")
+          assert not problems, "bundle problems:\n  " + "\n  ".join(problems)
+
+          tasks = resources["jobs"]["insilico_trial_simulation"]["tasks"]
           keys = [task["task_key"] for task in tasks]
           assert keys == ["validate_protocol", "simulate_trial", "train_physiology_model"], keys
-          print("bundle definition ok")
+          print(f"bundle ok: {len(resources['jobs'])} job(s), "
+                f"{sum(len(j.get('tasks', [])) for j in resources['jobs'].values())} task(s)")
           PY
