@@ -605,10 +605,13 @@ def cmd_studio(args: argparse.Namespace) -> int:
 
 def cmd_demo(args: argparse.Namespace) -> int:
     """Small end-to-end run: cohort -> simulation -> report, offline LLM only."""
+    from .config import resolve_asset
     from .pipeline import TrialSimulationPipeline, load_protocol
 
+    # Resolved against the repository root and the container layout, so the demo
+    # works from any working directory (including /data inside the image).
     config = load_config(None, {
-        "protocol_path": "conf/trial_protocol_demo.yaml",
+        "protocol_path": str(resolve_asset("conf/trial_protocol_demo.yaml")),
         "n_patients": args.patients,
         "n_cohorts": max(4, args.patients // 50),
         "epochs": args.epochs,

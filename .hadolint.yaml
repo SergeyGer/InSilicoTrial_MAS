@@ -1,0 +1,15 @@
+# hadolint configuration.
+#
+# Two rules are disabled deliberately; everything else must stay clean.
+ignored:
+  # DL3013 - "pin versions in pip".
+  #   Dependencies are declared with ranges in pyproject.toml and updated by
+  #   Dependabot (pip ecosystem, weekly). Pinning them again inside the Dockerfile
+  #   would create a second, drifting source of truth and would silently bypass the
+  #   dependency review that runs on every pull request.
+  - DL3013
+  # DL3008 - "pin versions in apt-get install".
+  #   The JVM version follows the Debian base image (`openjdk-17-jre-headless`);
+  #   pinning a point release would break the build as soon as the base image is
+  #   refreshed, and the base image digest is what actually pins the OS packages.
+  - DL3008

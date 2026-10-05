@@ -128,6 +128,58 @@ jobs:
       - name: Spark engine must reproduce the sequential engine
         run: pytest -q -m spark
 
+  docker:
+    name: Docker image and compose stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the runtime image
+        run: docker build --target runtime -t insilico-trial-mas:ci .
+
+      - name: Run a trial inside the container
+        run: |
+          docker run --rm --name insilico-ci -v ci-artifacts:/data insilico-trial-mas:ci \
+            demo --patients 150 --epochs 4 --json > demo.json
+          python - <<'PY'
+          import json, pathlib
+          payload = json.loads(pathlib.Path("demo.json").read_text())
+          assert payload["patients"] > 0, payload
+          assert "dashboard" in payload, payload
+          print(f"container demo ok: {payload['patients']} patients, dashboard {payload['dashboard']}")
+          PY
+
+      - name: The image must not run as root
+        run: |
+          user=$(docker run --rm --entrypoint id insilico-trial-mas:ci -u)
+          test "$user" = "10001" || { echo "expected uid 10001, got $user"; exit 1; }
+
+      - name: Report templates must be packaged (guards a real regression)
+        run: |
+          docker run --rm --entrypoint python insilico-trial-mas:ci - <<'PY'
+          import importlib.resources as resources
+          for template in ("report.md.j2", "report.html.j2"):
+              text = resources.files("insilico_trial_mas.templates").joinpath(template).read_text(encoding="utf-8")
+              assert text.strip(), template
+          print("report templates ship inside the wheel")
+          PY
+
+      - name: Compose file is valid and the Studio answers
+        run: |
+          docker compose config --quiet
+          docker compose build studio
+          docker compose up -d studio
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/api/config > /dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8765/api/config | head -c 200
+          docker compose ps
+          docker compose down -v
+
+      - name: Build the test image (pytest + ruff + mypy run during the build)
+        run: docker build --target test -t insilico-trial-mas:test .
+
   infrastructure:
     name: Terraform and bundle validation
     runs-on: ubuntu-latest

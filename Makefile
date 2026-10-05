@@ -136,6 +136,40 @@ github-show: ## Print the live repository settings
 publish: ## Run the quality gates and publish the tree to GitHub
 	bash scripts/publish_github.sh
 
+.PHONY: docker-build
+docker-build: ## Build the runtime image (target: runtime)
+	docker build -t insilico-trial-mas:local .
+
+.PHONY: docker-spark
+docker-spark: ## Build the Spark image (JRE + PySpark + Delta)
+	docker build --target spark -t insilico-trial-mas:spark .
+
+.PHONY: docker-test
+docker-test: ## Run pytest + ruff + mypy inside the image (fails the build on error)
+	docker build --target test -t insilico-trial-mas:test .
+
+.PHONY: docker-demo
+docker-demo: ## One-shot demo run in a container, results in ./artifacts/docker
+	mkdir -p artifacts/docker
+	docker run --rm --user "$$(id -u):$$(id -g)" -v "$$PWD/artifacts/docker:/data/artifacts" \
+		insilico-trial-mas:local demo --patients $(PATIENTS) --epochs $(EPOCHS) --output-dir /data/artifacts/demo
+
+.PHONY: docker-studio
+docker-studio: ## Studio UI in a container on http://127.0.0.1:8765 (Ctrl-C to stop)
+	docker compose up studio
+
+.PHONY: docker-shell
+docker-shell: ## Interactive shell in the dev image with the source mounted
+	docker compose --profile tools run --rm dev
+
+.PHONY: docker-down
+docker-down: ## Stop the compose stack and remove its volumes
+	docker compose down -v
+
+.PHONY: docker-clean
+docker-clean: ## Remove the images built by this Makefile
+	-docker image rm insilico-trial-mas:local insilico-trial-mas:spark insilico-trial-mas:test
+
 .PHONY: iac-validate
 iac-validate: ## terraform fmt + validate for the IaC module
 	terraform -chdir=terraform fmt -recursive -check

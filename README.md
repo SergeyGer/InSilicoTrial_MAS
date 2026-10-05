@@ -15,11 +15,13 @@ human dose.
 [![Ruff](https://img.shields.io/badge/lint-ruff-7a5ea8.svg)](pyproject.toml)
 [![Typed: mypy](https://img.shields.io/badge/types-mypy-7a5ea8.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-206%20passing-1c7c54.svg)](tests)
+[![Docker](https://img.shields.io/badge/Docker-compose%20ready-2496ED.svg)](docs/DOCKER.md)
 [![Databricks](https://img.shields.io/badge/Databricks-Asset%20Bundle-a2701a.svg)](databricks.yml)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform%20%C2%B7%20AWS-a2701a.svg)](terraform)
 
-[Quickstart](#quickstart) · [Architecture](#architecture) · [Technology stack](#technology-stack) ·
-[User interface](#user-interface) · [Documentation](#documentation) · [Contributing](CONTRIBUTING.md)
+[Quickstart](#quickstart) · [Docker](#docker) · [Architecture](#architecture) ·
+[Technology stack](#technology-stack) · [User interface](#user-interface) ·
+[Documentation](#documentation) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -86,7 +88,41 @@ participant, and the Biostatistician Agent reads the results.
 | **Configuration & validation** | pydantic v2, PyYAML, Jinja2, `dataclasses` | Protocol schema, trial config, YAML/env overrides, report templates |
 | **Infrastructure as code** | **Terraform** (Databricks + AWS providers), **Databricks Asset Bundles**, AWS S3 / IAM / EC2 spot / Batch | Reproducible cloud environments and a deployable simulation job |
 | **User interface** | Server-rendered **SVG** + vanilla JS, Python `http.server` | Self-contained dashboard and a live Studio — zero UI dependencies, no CDN |
-| **Quality gates** | pytest (+ pytest-cov, pytest-asyncio), Ruff, mypy, GitHub Actions, CodeQL, Dependabot | 206 tests, lint/type-clean, security scanning, dependency hygiene |
+| **Containers** | **Docker** (multi-stage, four targets), **Docker Compose**, GHCR publishing | One image for CLI, Studio and Spark; CI builds it on every pull request |
+| **Quality gates** | pytest (+ pytest-cov, pytest-asyncio), Ruff, mypy, GitHub Actions, CodeQL, Dependabot | 220 tests, lint/type-clean, security scanning, dependency hygiene |
+
+---
+
+## Docker
+
+```bash
+docker build -t insilico-trial-mas .            # runtime image, ~650 MB, non-root
+docker run --rm insilico-trial-mas demo --patients 400 --epochs 6
+docker run --rm -p 8765:8765 insilico-trial-mas studio --host 0.0.0.0 --no-browser
+```
+
+| Target | Contains | For |
+| --- | --- | --- |
+| `runtime` (default) | package + example profiles, uid 10001, offline LLM, healthcheck | CLI, Studio, CI smoke tests |
+| `spark` | + OpenJDK 17 and the PySpark/Delta extras | the Databricks engine locally |
+| `dev` | + dev tooling, tests, linters | interactive work with mounted sources |
+| `test` | `dev` + a pytest/ruff/mypy run **during the build** | a build-time quality gate in CI |
+
+Compose brings up the Studio with a healthcheck and injects `.env` only when you
+have one, so credentials are never baked into an image:
+
+```bash
+docker compose up -d studio
+docker compose run --rm demo
+docker compose --profile spark run --rm spark     # 2000 patients, local[*]
+docker compose --profile tools run --rm dev       # shell
+docker compose cp studio:/data/artifacts ./artifacts
+```
+
+Build variants: `--build-arg EXTRAS=llm` adds the Bedrock/OpenAI providers,
+`--build-arg EXTRAS=llm,ml` also adds the gradient-boosting head; tagged releases
+publish `ghcr.io/sergeyger/insilico-trial-mas` (plus a `:spark` tag). Full guide,
+including volume ownership, proxy and architecture notes: [docs/DOCKER.md](docs/DOCKER.md).
 
 ---
 
@@ -148,7 +184,21 @@ functions.
 
 ## Quickstart
 
-### 1. Laptop — no credentials, no cloud
+### 1. Docker — nothing to install but Docker
+
+```bash
+git clone https://github.com/SergeyGer/InSilicoTrial_MAS.git && cd InSilicoTrial_MAS
+
+docker compose up -d studio        # Studio UI on http://localhost:8765
+docker compose run --rm demo       # one trial into the `artifacts` volume
+docker compose cp studio:/data/artifacts ./artifacts
+```
+
+The image defaults to the offline persona provider, so it needs no credentials and
+no network. `spark`, `dev` and `test` targets cover the JVM engine, an interactive
+shell and a build-time test gate — see [docs/DOCKER.md](docs/DOCKER.md).
+
+### 2. Laptop — no credentials, no cloud
 
 ```bash
 git clone https://github.com/SergeyGer/InSilicoTrial_MAS.git
@@ -163,7 +213,7 @@ The demo writes `artifacts/demo/<RUN-ID>/` with the run manifest, the
 Markdown/HTML/JSON report, the interactive dashboard, CDISC-inspired exports and
 the Silver observations.
 
-### 2. Spark on the driver (Databricks Community Edition pattern)
+### 3. Spark on the driver (Databricks Community Edition pattern)
 
 ```bash
 bash scripts/bootstrap.sh --spark   # installs PySpark and a portable JRE in .toolchain/
@@ -171,7 +221,7 @@ make simulate-spark PATIENTS=2000
 make test-spark                     # proves Spark == sequential
 ```
 
-### 3. Databricks on AWS
+### 4. Databricks on AWS
 
 ```bash
 cd terraform && cp terraform.tfvars.example terraform.tfvars && terraform apply
@@ -332,6 +382,7 @@ src/insilico_trial_mas/
   pipeline.py       the single definition of "a simulation run"
   cli.py            command line interface
 conf/  notebooks/  terraform/  resources/  scripts/  tests/  docs/  .github/  .vscode/
+Dockerfile  docker-compose.yml  .dockerignore
 ```
 
 ---
@@ -410,6 +461,8 @@ make calibrate      # clinical plausibility bands
 make verify-ui      # dashboard and Studio tests
 make notebook       # every notebook cell executes
 make iac-validate   # terraform fmt + validate
+make docker-test    # pytest + ruff + mypy inside the image
+make docker-demo    # one trial in a container, results in artifacts/docker
 ```
 
 CI runs all of the above on every push and pull request across Python 3.10–3.12,
@@ -427,6 +480,7 @@ plus CodeQL analysis and Dependabot updates.
 | [docs/UI.md](docs/UI.md) | UI design record, screens, design system, extension points |
 | [docs/RUNBOOK_DATABRICKS_AWS.md](docs/RUNBOOK_DATABRICKS_AWS.md) | Sizing, cost control, monitoring queries, failure playbook |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Profiles, environment overrides, credential chains, secrets on Databricks |
+| [docs/DOCKER.md](docs/DOCKER.md) | Image targets, Compose stack, volumes and ownership, credentials, Spark image, security notes, troubleshooting |
 | [docs/SPEC_COMPLIANCE.md](docs/SPEC_COMPLIANCE.md) | Requirement → implementation → test mapping, and every defect fixed |
 | [docs/ETHICS_AND_LIMITATIONS.md](docs/ETHICS_AND_LIMITATIONS.md) | Responsible use, bias, what the model does not capture |
 | [docs/SECURITY_NOTES.md](docs/SECURITY_NOTES.md) | Every CodeQL finding and how it was resolved, including the one dismissed as a false positive |

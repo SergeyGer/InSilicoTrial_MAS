@@ -213,7 +213,7 @@ class TrialSimulationPipeline:
         )
 
         # 4. Physiology model + run context.
-        loaded = load_physiology_model(protocol, config.ml)
+        loaded = load_physiology_model(protocol, config.ml, output_dir=config.output_dir)
         context = RunSpec(
             run_id=run_id,
             protocol=protocol,

@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Docker support**: multi-stage `Dockerfile` with four targets (`runtime`, `spark`,
+  `dev`, `test`), a `docker-compose.yml` stack (Studio, one-shot demo, Spark, dev
+  shell, build-time test gate), `.dockerignore`, eight `make docker-*` targets and
+  [docs/DOCKER.md](docs/DOCKER.md). The image runs as uid 10001, defaults to the
+  offline persona provider, ships with a `/api/config` healthcheck and publishes to
+  GHCR on tagged releases.
+
 ### Changed
+
+- Replaced the placeholder `Dockerfile` (a bare Ubuntu image that only opened a
+  shell) with the multi-stage build described above.
 
 - Terraform: raised the AWS provider constraint from `~> 5.50` to `~> 6.0` and
   migrated the module to it (verified against 6.67.0, pinned in

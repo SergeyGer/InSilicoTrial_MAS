@@ -75,7 +75,11 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-insilico_trial_mas = ["resources/*.yaml", "resources/templates/*.j2", "py.typed"]
+insilico_trial_mas = [
+  "templates/*.j2",          # Jinja report templates (Markdown and HTML)
+  "resources/*.yaml",        # population priors shipped with the package
+  "py.typed",
+]
 
 # ---------------------------------------------------------------------------
 # Test / lint / type-check configuration

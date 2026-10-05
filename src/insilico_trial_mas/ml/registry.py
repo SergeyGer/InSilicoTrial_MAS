@@ -127,6 +127,7 @@ def load_physiology_model(
     config: MLConfig,
     *,
     train_if_missing: bool | None = None,
+    output_dir: str | None = None,
 ) -> LoadedModel:
     """Resolve the physiology model according to the ML configuration."""
     backend = config.backend
@@ -177,6 +178,11 @@ def load_physiology_model(
         n_cohorts=max(1, n_rows // 250),
         epochs=protocol.epochs,
     )
+    if output_dir:
+        # Keep an on-demand model next to the run that needed it: the fallback in
+        # `persist_model` writes under this directory when `ml.model_path` is not
+        # writable (a `/dbfs/...` path outside Databricks, for example).
+        bootstrap = dataclasses.replace(bootstrap, output_dir=output_dir)
     logger.info("no physiology artifact found - training one on synthetic historical data")
     result = train_and_register(protocol, bootstrap, n_rows=n_rows, register=False)
     model = HybridPhysiologyModel(result.head)

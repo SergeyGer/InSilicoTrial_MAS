@@ -21,6 +21,7 @@ import dataclasses
 import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -28,7 +29,7 @@ import numpy as np
 from ..cohort.generator import CohortGenerator
 from ..config import SimulationConfig
 from ..errors import ModelRegistryError
-from ..logging_utils import get_logger
+from ..logging_utils import error_kind, get_logger
 from ..reproducibility import rng_for
 from ..schemas import DrugSpec, PatientProfile, TrialProtocol
 from .physiology import (
@@ -201,6 +202,26 @@ def train_residual_head(
     return TrainingResult(head=head, metrics=metrics, n_train=int(x_train.shape[0]), n_holdout=int(x_test.shape[0]))
 
 
+def persist_model(result: TrainingResult, config: SimulationConfig) -> Path:
+    """Save the trained head, falling back to the run directory when needed.
+
+    A profile written for Databricks points ``ml.model_path`` at ``/dbfs/...``;
+    that path does not exist in a container or on a laptop. Losing a simulation
+    because a *model cache* could not be written would be the wrong trade-off, so
+    the artefact is written under ``output_dir/models`` instead - with a warning
+    that names both paths, since the run manifest records the path actually used.
+    """
+    try:
+        return result.head.save(config.ml.model_path)
+    except OSError as exc:
+        fallback = Path(config.output_dir) / "models" / Path(config.ml.model_path).name
+        logger.warning(
+            f"cannot write the physiology model to {config.ml.model_path} ({error_kind(exc)}); "
+            f"falling back to {fallback}"
+        )
+        return result.head.save(str(fallback))
+
+
 def train_and_register(
     protocol: TrialProtocol,
     config: SimulationConfig,
@@ -210,7 +231,7 @@ def train_and_register(
 ) -> TrainingResult:
     """Train the residual head, persist it and optionally register it in MLflow."""
     result = train_residual_head(protocol, config, n_rows=n_rows)
-    path = result.head.save(config.ml.model_path)
+    path = persist_model(result, config)
     result.artifact_path = str(path)
     logger.info("saved physiology model artifact", extra={"extra_fields": {"path": str(path)}})
 

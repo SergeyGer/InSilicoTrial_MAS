@@ -301,6 +301,51 @@ def _env_overrides(prefix: str = ENV_PREFIX) -> dict[str, Any]:
     return overrides
 
 
+#: Container layout used by the published image (`conf/` lands in `/app/conf`).
+CONTAINER_ASSET_ROOT = Path("/app")
+
+
+def asset_roots() -> tuple[Path, ...]:
+    """Directories a repository-relative asset (``conf/*.yaml``) may live under.
+
+    The examples and profiles are written as ``conf/simulation_local.yaml``, which
+    only resolves when the process happens to run from the checkout root. An
+    installed wheel, a Databricks job whose working directory is the workspace
+    root, and the container image (working directory ``/data``, profiles in
+    ``/app/conf``) all need the paths to resolve anyway - so the candidate roots
+    are the current directory, the repository root inferred from this file, and the
+    container layout.
+    """
+    package_root = Path(__file__).resolve().parent  # .../src/insilico_trial_mas
+    roots = [Path.cwd(), package_root]
+    roots.extend(package_root.parents[:3])  # src/, repository root, parent of it
+    roots.append(CONTAINER_ASSET_ROOT)
+    seen: list[Path] = []
+    for root in roots:
+        if root not in seen:
+            seen.append(root)
+    return tuple(seen)
+
+
+def resolve_asset(path: str | Path) -> Path:
+    """Return the first existing candidate for ``path``, else the path unchanged.
+
+    Callers keep raising their usual "not found" error when nothing matches, so a
+    genuinely wrong path still fails loudly - it just also works from any working
+    directory.
+    """
+    candidate = Path(path)
+    if candidate.is_absolute():
+        return candidate
+    if candidate.exists():
+        return candidate
+    for root in asset_roots():
+        probe = root / candidate
+        if probe.exists():
+            return probe
+    return candidate
+
+
 def load_yaml(path: str | Path) -> dict[str, Any]:
     """Load a YAML mapping, raising :class:`ConfigurationError` on any problem."""
     file_path = Path(path)
@@ -326,10 +371,16 @@ def load_config(path: str | Path | None = None, overrides: dict[str, Any] | None
     overrides:
         Nested dict applied last, e.g. ``{"engine": {"backend": "spark"}}``.
     """
-    payload: dict[str, Any] = load_yaml(path) if path is not None else {}
+    payload: dict[str, Any] = load_yaml(resolve_asset(path)) if path is not None else {}
     payload = _deep_merge(payload, _env_overrides())
     payload = _deep_merge(payload, overrides or {})
     config = _build_dataclass(SimulationConfig, payload)
+    # Profiles carry a repository-relative protocol path (`conf/trial_protocol_demo.yaml`).
+    # Resolving it here keeps a profile portable across the checkout, a Databricks job
+    # whose working directory is not the repository root, and the container image
+    # (where the profiles live in /app/conf but the process runs in /data).
+    if config.protocol_path:
+        config.protocol_path = str(resolve_asset(config.protocol_path))
     validate_config(config)
     return config
 

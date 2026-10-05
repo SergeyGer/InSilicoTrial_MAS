@@ -1,0 +1,134 @@
+# ============================================================================
+#  InSilicoTrial MAS - Docker Compose stack.
+#
+#      docker compose up -d studio          # live Studio UI on http://localhost:8765
+#      docker compose run --rm demo         # one-shot simulation into the volume
+#      docker compose --profile spark run --rm spark   # Spark engine (JRE image)
+#      docker compose --profile tools run --rm dev     # shell with dev tooling
+#      docker compose --profile ci build test         # run the test suite in the image
+#
+#  Results live in the named volume `artifacts` (mounted at /data/artifacts):
+#
+#      docker compose cp studio:/data/artifacts ./artifacts
+#
+#  Provider credentials are never baked into the image. Copy .env.example to .env
+#  and fill in what you need - the file is injected only when it exists, because
+#  the container's default provider is the deterministic offline one.
+# ============================================================================
+
+name: insilico-trial-mas
+
+x-image: &image
+  build:
+    context: .
+    target: runtime
+    args:
+      VERSION: "1.0.0"
+  image: insilico-trial-mas:local
+
+x-runtime: &runtime
+  <<: *image
+  volumes:
+    - artifacts:/data/artifacts
+  env_file:
+    # Present on a developer machine, absent in CI: `required: false` keeps the
+    # stack usable without any credentials at all.
+    - path: .env
+      required: false
+
+services:
+  # Long-running readout UI: pick a protocol, cohort size and engine in the browser.
+  studio:
+    <<: *runtime
+    command:
+      - studio
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8765"
+      - --no-browser
+      - --config
+      - /app/conf/simulation_local.yaml
+    ports:
+      - "${INSILICO_STUDIO_PORT:-8765}:8765"
+    environment:
+      INSILICO_LOG_LEVEL: ${INSILICO_LOG_LEVEL:-INFO}
+    restart: unless-stopped
+
+  # One-shot end-to-end run; exits when the report is written. `docker compose up`
+  # therefore starts the Studio and finishes a demo trial in the same command.
+  demo:
+    <<: *runtime
+    command:
+      - demo
+      - --patients
+      - "${INSILICO_DEMO_PATIENTS:-400}"
+      - --epochs
+      - "${INSILICO_DEMO_EPOCHS:-6}"
+      - --output-dir
+      - /data/artifacts/demo
+    restart: "no"
+
+  # Databricks-equivalent local run: same code path, Spark engine, JVM included.
+  spark:
+    profiles: ["spark"]
+    build:
+      context: .
+      target: spark
+      args:
+        VERSION: "1.0.0"
+    image: insilico-trial-mas:spark
+    volumes:
+      - artifacts:/data/artifacts
+    command:
+      - simulate
+      - --config
+      - /app/conf/simulation_local.yaml
+      - --patients
+      - "${INSILICO_DEMO_PATIENTS:-2000}"
+      - --engine
+      - spark
+      - --output-dir
+      - /data/artifacts/spark
+    environment:
+      # Spark's master is read from SPARK_MASTER (the standard Spark variable);
+      # everything else is a normal INSILICO_* override.
+      SPARK_MASTER: ${SPARK_MASTER:-local[*]}
+      INSILICO_ENGINE__SPARK_SHUFFLE_PARTITIONS: ${INSILICO_ENGINE__SPARK_SHUFFLE_PARTITIONS:-8}
+      INSILICO_ENGINE__SINGLE_NODE: ${INSILICO_ENGINE__SINGLE_NODE:-false}
+
+  # Interactive shell with the dev extras, tests and linters installed.
+  dev:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: dev
+      args:
+        VERSION: "1.0.0"
+    image: insilico-trial-mas:dev
+    volumes:
+      - artifacts:/data/artifacts
+      # Live source: edits on the host are picked up without rebuilding.
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./conf:/app/conf
+    working_dir: /app
+    command: ["bash"]
+
+  # Build-only service: the image runs pytest, ruff and mypy while it is built,
+  # so a failing gate fails the build (`docker compose --profile ci build test`).
+  test:
+    profiles: ["ci"]
+    build:
+      context: .
+      target: test
+    image: insilico-trial-mas:test
+
+volumes:
+  artifacts:
+    # Named volumes are created with the right ownership for the unprivileged
+    # image user. To browse results directly on the host, replace this with a bind
+    # mount and match the user ids (see docs/DOCKER.md):
+    #
+    #   driver_opts: ...   # or, on the command line:
+    #   docker run --user "$(id -u):$(id -g)" -v "$PWD/artifacts:/data/artifacts" ...

@@ -1,0 +1,69 @@
+# Build context for the Dockerfile.
+#
+# The image needs the packaging metadata, src/, conf/ and (for the dev and test
+# targets) tests/ and scripts/. Everything else is excluded: a smaller context
+# means a faster build, and excluding local state keeps run artefacts and
+# credentials out of the image layers.
+
+# --- version control and local toolchains ---------------------------------
+.git
+.gitignore
+.gitattributes
+.github/
+.toolchain/
+.venv/
+venv/
+
+# --- simulation output and caches -----------------------------------------
+artifacts/
+data/
+reports/
+mlruns/
+*.parquet
+*.delta/
+spark-warehouse/
+metastore_db/
+derby.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+junit.xml
+
+# --- secrets: never in an image layer -------------------------------------
+.env
+.env.*
+!.env.example
+*.tfvars
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+
+# --- editor and OS noise --------------------------------------------------
+.vscode/
+.idea/
+.ipynb_checkpoints/
+.DS_Store
+*.swp
+
+# --- build outputs and archives -------------------------------------------
+dist/
+build/
+*.egg-info/
+*.tar.gz
+*.tgz
+*.zip
+*.whl
+
+# --- infrastructure, docs and previews not needed inside the image ---------
+terraform/
+databricks.yml
+resources/
+notebooks/
+docs/
+*.docx

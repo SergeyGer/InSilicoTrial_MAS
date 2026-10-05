@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 env:
   PYTHONPATH: src
@@ -76,6 +77,45 @@ jobs:
         with:
           name: distribution
           path: dist/*
+
+  images:
+    name: Publish container images
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Runtime image
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          version="${GITHUB_REF_NAME#v}"
+          docker build --target runtime \
+            --build-arg VERSION="$version" \
+            -t "${image}:${version}" -t "${image}:latest" .
+          docker push "${image}:${version}"
+          docker push "${image}:latest"
+
+      - name: Spark image
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          version="${GITHUB_REF_NAME#v}"
+          docker build --target spark \
+            --build-arg VERSION="$version" \
+            -t "${image}:${version}-spark" -t "${image}:spark" .
+          docker push "${image}:${version}-spark"
+          docker push "${image}:spark"
+
+      - name: Smoke-test the published image
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          docker run --rm "${image}:latest" demo --patients 100 --epochs 3
 
   release:
     name: Publish GitHub Release
