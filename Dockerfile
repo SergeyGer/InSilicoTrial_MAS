@@ -132,7 +132,7 @@ RUN python -m pip install ".[dev]" \
  # /etc/profile and can drop the image PATH, after which `python` is the system
  # interpreter without the package. Putting the venv first for every shell is the
  # reliable fix.
- && printf 'export PATH=/opt/venv/bin:$PATH\n' > /etc/profile.d/insilico-venv.sh \
+ && echo "export PATH=/opt/venv/bin:\$PATH" > /etc/profile.d/insilico-venv.sh \
  && chmod -R a+rX /app \
  && chown -R "${APP_UID}:${APP_GID}" /app
 
