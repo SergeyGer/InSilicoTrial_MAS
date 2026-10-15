@@ -273,3 +273,54 @@ The image is architecture-neutral apart from the JVM in the `spark` target, whic
   image that is `/data`, not the checkout root.
 * **Four targets instead of four Dockerfiles**: they share the same builder layers,
   so `--target dev` and `--target test` cost almost nothing extra.
+---
+
+## 10. Starting, stopping and switching between projects
+
+The stack is designed for a machine that hosts several projects — a laptop with two
+repositories, or a shared Linux server.
+
+```bash
+bash scripts/project.sh start        # Studio + one demo run     (Windows: .\scripts\project.ps1 start)
+bash scripts/project.sh status       # what this project runs, and what else runs here
+bash scripts/project.sh logs studio   # follow a log
+bash scripts/project.sh stop          # stop the containers, keep the results volume
+bash scripts/project.sh down          # stop and remove containers and network
+bash scripts/project.sh purge         # also delete the results volume (asks first)
+bash scripts/project.sh doctor        # ports, docker, autostart policy, disk usage
+```
+
+Both scripts (`scripts/project.sh` for Linux, macOS, WSL and Git Bash;
+`scripts/project.ps1` for Windows PowerShell) act only on this compose project.
+
+### Nothing starts by itself after a reboot
+
+Every service declares `restart: "no"`, so a server reboot — or a Docker daemon
+restart — never brings this project back up. The containers run exactly between
+`project.sh start` and `project.sh stop`. The reason is the shared-machine case: a
+stack that reappears on its own competes for ports and memory with whatever the
+operator is doing at the time.
+
+Containers started earlier under a different policy can be corrected with:
+
+```bash
+docker update --restart=no $(docker ps -aq)
+docker inspect --format '{{.Name}}: {{.HostConfig.RestartPolicy.Name}}' $(docker ps -q)
+```
+
+### Projects do not collide
+
+| Mechanism | Effect |
+| --- | --- |
+| `name: insilico-trial-mas` in `docker-compose.yml` | containers, network and volume are prefixed, so two checkouts never share state |
+| `INSILICO_STUDIO_PORT` (default 8765) | the published port is the one resource that is genuinely shared; set it in `.env` when another project already owns 8765 |
+| `docker compose ls` | lists every stack running on the machine; `project.sh status` prints it for you |
+| scripts | never call `docker stop $(docker ps -q)` or `docker system prune`; `purge` deletes only this project's volume, after confirmation |
+
+### Development containers
+
+`.devcontainer/` opens the repository in a container from VS Code (Dev Containers
+extension): the same `dev` image, the whole repository mounted at `/app`, the venv on
+`PATH` and the port forwarded. The container belongs to VS Code's window — closing it
+stops the container — while the project's own stack stays under `project.sh`. See
+[`.devcontainer/README.md`](../.devcontainer/README.md).

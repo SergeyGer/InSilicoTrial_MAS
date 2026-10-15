@@ -78,6 +78,16 @@ reproducible on any machine. Prefer a plain install, Windows, or WSL? The
 [Getting Started](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Getting-Started)
 page has all three paths, step by step.
 
+Starting and stopping is one command each, and nothing returns after a reboot:
+
+```bash
+bash scripts/project.sh start      # or .\scripts\project.ps1 start on Windows
+bash scripts/project.sh stop       # results are kept; other projects are untouched
+```
+
+The repository also opens as a **dev container** in VS Code (`.devcontainer/`), with
+the toolchain, tests and linters already installed inside the container.
+
 ## What this project demonstrates
 
 Built end to end — architecture, science, distributed execution, interfaces,

@@ -50,10 +50,14 @@ services:
       - --config
       - /app/conf/simulation_local.yaml
     ports:
+      # Override in .env when another project already owns 8765 on this machine.
       - "${INSILICO_STUDIO_PORT:-8765}:8765"
     environment:
       INSILICO_LOG_LEVEL: ${INSILICO_LOG_LEVEL:-INFO}
-    restart: unless-stopped
+    # `no` is deliberate: a shared server may host several projects, and a service
+    # that comes back on its own after a reboot surprises whoever is working on
+    # something else. Start the stack when you need it (`scripts/project.sh start`).
+    restart: "no"
 
   # One-shot end-to-end run; exits when the report is written. `docker compose up`
   # therefore starts the Studio and finishes a demo trial in the same command.

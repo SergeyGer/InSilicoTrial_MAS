@@ -128,11 +128,19 @@ COPY Makefile ./
 
 RUN python -m pip install ".[dev]" \
  && python -m pip install -e . \
+ # A login shell (`bash -lc`, which is what VS Code and many tools spawn) re-reads
+ # /etc/profile and can drop the image PATH, after which `python` is the system
+ # interpreter without the package. Putting the venv first for every shell is the
+ # reliable fix.
+ && printf 'export PATH=/opt/venv/bin:$PATH\n' > /etc/profile.d/insilico-venv.sh \
  && chmod -R a+rX /app \
  && chown -R "${APP_UID}:${APP_GID}" /app
 
 ENV PYTHONPATH=/app/src
 USER insilico
+# Clear the CLI entrypoint inherited from the runtime stage: `docker run <dev-image>
+# bash` (and the dev container's `sleep infinity`) must not be read as subcommands.
+ENTRYPOINT []
 CMD ["bash"]
 
 # ---------------------------------------------------------------------------

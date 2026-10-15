@@ -1,0 +1,25 @@
+# Overrides applied on top of the project's docker-compose.yml when VS Code opens
+# the repository in a dev container (`dockerComposeFile` in devcontainer.json lists
+# both files, in this order).
+#
+# Three differences from the plain `dev` service:
+#   * the whole repository is mounted at /app, so .devcontainer, docs, notebooks and
+#     scripts are visible in the editor - not only src/, tests/ and conf/;
+#   * the container stays alive (`sleep infinity`) instead of exiting after a shell;
+#   * the restart policy stays "no": VS Code starts this container when the folder is
+#     opened and `shutdownAction: stopCompose` stops it again when the window closes.
+services:
+  dev:
+    command: ["sleep", "infinity"]
+    restart: "no"
+    volumes:
+      # Compose appends to the volume list of the base service rather than replacing
+      # it, so the per-directory mounts declared there (src, tests, conf) remain.
+      # They point at the same host paths, which makes them redundant but harmless,
+      # and keeping them means this file also works with older Compose versions that
+      # do not support the `!override` tag.
+      - ./:/app
+      - artifacts:/data/artifacts
+    # Keeps the container usable when the host runs SELinux; ignored elsewhere.
+    security_opt:
+      - label=disable

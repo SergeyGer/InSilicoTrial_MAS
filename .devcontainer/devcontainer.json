@@ -1,0 +1,74 @@
+{
+  "name": "InSilicoTrial MAS (dev)",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.devcontainer.yml"],
+  "service": "dev",
+  "runServices": ["dev"],
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "insilico",
+  "updateRemoteUserUID": true,
+  "forwardPorts": [8765],
+  "portsAttributes": {
+    "8765": {
+      "label": "InSilicoTrial Studio",
+      "onAutoForward": "notify"
+    }
+  },
+  "remoteEnv": {
+    "PATH": "/opt/venv/bin:${containerEnv:PATH}"
+  },
+  "containerEnv": {
+    "INSILICO_LOG_LEVEL": "INFO",
+    "INSILICO_LLM__PROVIDER": "offline",
+    "INSILICO_STORAGE__BACKEND": "local",
+    "PYTHONPATH": "/app/src"
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        "ms-toolsai.jupyter",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions",
+        "davidanson.vscode-markdownlint"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": ["tests", "-m", "not spark"],
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.extraPaths": ["/app/src"],
+        "ruff.importStrategy": "fromEnvironment",
+        "mypy-type-checker.importStrategy": "fromEnvironment",
+        "yaml.schemas": {
+          "https://raw.githubusercontent.com/databricks/databricks-bundle-schema/main/bundle-schema.json": [
+            "databricks.yml",
+            "resources/*.yml"
+          ]
+        },
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true,
+          "**/.ruff_cache": true,
+          "**/.mypy_cache": true
+        },
+        "editor.rulers": [110],
+        "editor.formatOnSave": false,
+        "files.trimTrailingWhitespace": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb",
+    "storage": "24gb"
+  }
+}

@@ -136,6 +136,19 @@ github-show: ## Print the live repository settings
 publish: ## Run the quality gates and publish the tree to GitHub
 	bash scripts/publish_github.sh
 
+.PHONY: start stop status logs
+start: ## Start this project's containers (Studio + demo); nothing autostarts after a reboot
+	bash scripts/project.sh start
+
+stop: ## Stop this project's containers, keeping the results volume
+	bash scripts/project.sh stop
+
+status: ## Show what this project runs, and what else runs on this machine
+	bash scripts/project.sh status
+
+logs: ## Follow the Studio log (SERVICE=studio by default)
+	bash scripts/project.sh logs $(SERVICE)
+
 .PHONY: docker-build
 docker-build: ## Build the runtime image (target: runtime)
 	docker build -t insilico-trial-mas:local .

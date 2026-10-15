@@ -60,6 +60,17 @@ dashboard.html
 terraform.tfvars
 crash.log
 
+# --- Personal working documents (kept in the tree, never committed) --------
+# Local how-to notes, generated briefings and meeting documents live next to the
+# code but are not part of the product.
+Run_Stop_Project.docx
+*.local.docx
+
+# --- PowerShell and editor runtime files ----------------------------------
+# PowerShell writes these next to its working directory; they are noise, not code.
+ModuleAnalysisCache-*
+StartupProfileData-*
+
 # --- Notebooks / editors --------------------------------------------------
 .ipynb_checkpoints/
 .databricks/
