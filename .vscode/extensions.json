@@ -12,7 +12,11 @@
     "tamasfe.even-better-toml",
     "eamodio.gitlens",
     "editorconfig.editorconfig",
-    "github.vscode-github-actions"
+    "github.vscode-github-actions",
+    "ms-vscode-remote.remote-ssh",
+    "ms-vscode-remote.remote-containers",
+    "ms-azuretools.vscode-docker",
+    "davidanson.vscode-markdownlint"
   ],
   "unwantedRecommendations": []
 }

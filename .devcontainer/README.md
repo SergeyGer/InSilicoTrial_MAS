@@ -90,6 +90,50 @@ containers live on a shared Linux server.
 Closing the VS Code window stops the dev container (`shutdownAction: stopCompose`);
 the project's own stack keeps running until `scripts/project.sh stop`.
 
+## One developer, several laptops
+
+Everything that matters lives on the server — the clone, the containers, the results
+volume, the DeepSeek Harness state — so a second laptop is a *client*, not a second
+environment.
+
+| Item | Where it lives | Per laptop? |
+| --- | --- | --- |
+| Source code | the clone on the server | no — both laptops open the same folder |
+| Containers, volumes, ports | the server's Docker | no |
+| `COMPOSE_PROJECT_NAME`, `INSILICO_STUDIO_PORT` | `.env` on the server | no |
+| Git identity and branches | the server's `~/.gitconfig` and the clone | no |
+| SSH key, VS Code, extensions | the laptop | **yes** — the only per-laptop setup |
+
+Adding a laptop takes about ten minutes:
+
+1. Generate a key **on that laptop** (`ssh-keygen -t ed25519`) and append its public
+   part to `~/.ssh/authorized_keys` on the server. One key per device can be revoked
+   on its own.
+2. Copy the `Host insilico` block into `%USERPROFILE%\.ssh\config`, keep
+   `ForwardAgent yes`.
+3. Install VS Code and the extensions this repository recommends
+   (`.vscode/extensions.json` prompts automatically: Remote - SSH, Dev Containers,
+   Python, Ruff, Docker). Turning on Settings Sync with your Microsoft or GitHub
+   account keeps both laptops identical without copying files.
+4. Connect, open the same server folder, `Dev Containers: Reopen in Container`.
+
+Leaving one laptop and continuing on the other:
+
+```bash
+# before you walk away
+git status                 # commit or push what you want to keep
+git push -u origin HEAD    # the branch is now visible from the second laptop
+bash scripts/project.sh stop   # optional: containers are not needed while you are away
+
+# on the other laptop
+git pull --ff-only
+make check
+```
+
+Uncommitted work exists only on the machine you left, so commit to a work-in-progress
+branch before switching. Both laptops may be attached to the same dev container at the
+same time — they share the same files, so avoid running two heavy builds at once.
+
 ## Synchronising a team
 
 Git is the only shared source of truth; everything else is either derived or local.
