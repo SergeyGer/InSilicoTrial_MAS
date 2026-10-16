@@ -188,8 +188,9 @@ media: ## Regenerate the README screenshots and the product tour from the runnin
 	$(PY) scripts/capture_media.py --encode-only
 
 .PHONY: media-capture
-media-capture: ## Capture fresh screenshots/video (needs the insilico-capture image and a live Studio)
+media-capture: ## Capture fresh screenshots/video (builds the capture image, needs a live Studio)
 	@test -n "$(DASHBOARD)" || (echo "usage: make media-capture DASHBOARD=file:///work/artifacts/.../dashboard.html STUDIO=http://127.0.0.1:8765"; exit 2)
+	docker image inspect insilico-capture >/dev/null 2>&1 || docker build -t insilico-capture scripts/capture-image
 	docker run --rm --network host -v "$$PWD:/work" -w /work insilico-capture \
 		python scripts/capture_media.py --dashboard "$(DASHBOARD)" --studio "$(STUDIO)" --encode
 

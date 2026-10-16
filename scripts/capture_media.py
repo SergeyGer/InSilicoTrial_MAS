@@ -10,7 +10,7 @@ the screenshots and the video are rebuilt in about a minute.
     # 2. the live Studio
     insilico-trial studio --host 0.0.0.0 --port 8765 --no-browser &
 
-    # 3. capture (needs the capture image, see docs/DOCKER.md)
+    # 3. capture (build the image once: docker build -t insilico-capture scripts/capture-image)
     docker run --rm --network host -v "$PWD:/work" -w /work insilico-capture \\
         python scripts/capture_media.py \\
         --dashboard "file:///work/artifacts/media/<RUN>/report/dashboard.html" \\
