@@ -108,10 +108,15 @@ def test_simulate_time_travel_lineage_and_report(tmp_path, capsys) -> None:
     run_id = summary["run_id"]
     assert summary["rows"] == summary["patients"] * 4
 
-    # time travel: history + a version-scoped read
+    # time travel: history + a version-scoped read.
+    # The autouse `_isolate_local_state` fixture points storage.local_root at a fresh
+    # directory, so this run must be version 1 - asserting it turns a leak in that
+    # isolation into a visible failure instead of a quietly passing test.
     assert main(["time-travel", "--table", "silver/patient_states", "--history", "--json"]) == EXIT_OK
     history = json.loads(capsys.readouterr().out)
-    assert history and history[0]["version"] >= 1
+    versions = sorted(entry["version"] for entry in history)
+    assert versions[0] == 1, f"the lake was not isolated: versions {versions[:5]}"
+    assert versions[-1] >= 1
 
     assert (
         main(

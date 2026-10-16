@@ -147,6 +147,32 @@ Git is the only shared source of truth; everything else is either derived or loc
 | Results | per-developer volume; share a report with `docker compose cp` |
 | Reproducibility | the same seed gives identical rows on different machines (`make verify-repro`) |
 
+## Reaching DeepSeek Harness (port 3080) from a container window
+
+DeepSeek Harness listens on the **host** loopback (`127.0.0.1:3080`). A dev container
+runs in its own network namespace, so forwarding 3080 in a container window points at
+the container's loopback, where nothing is listening. Measured in this repository:
+
+| Probe from inside the dev container | Bridge network (default) | `network_mode: host` |
+| --- | --- | --- |
+| `127.0.0.1:3080` | `ConnectionRefused` | reachable |
+| `172.17.0.1:3080` (docker gateway) | `Timeout` | not applicable |
+
+Three ways to get to the UI, in order of convenience:
+
+1. **SSH tunnel from the laptop** - independent of VS Code mode, works always:
+
+   ```bash
+   ssh -N -L 3080:127.0.0.1:3080 root@<server>     # then open http://localhost:3080
+   ```
+
+2. **Host networking for the dev container** - uncomment `network_mode: host` in
+   `docker-compose.devcontainer.yml` and rebuild; VS Code's Ports panel then forwards
+   the host's port, and `http://localhost:3080` works from the container window too.
+
+3. **Forward it from a host window instead** - open the folder with Remote-SSH (not
+   "Reopen in Container") in a second window and forward 3080 there.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -157,4 +183,5 @@ Git is the only shared source of truth; everything else is either derived or loc
 | `import insilico_trial_mas` fails | Run `pip install -e ".[dev]"` in the container terminal |
 | Spark tests are skipped | They need a JVM: rebuild with the `spark` service, or run `bash scripts/bootstrap.sh --spark` on the host |
 | Port 8765 forwarded to the wrong stack | Two developers share the port: set `INSILICO_STUDIO_PORT` per developer in `.env` |
-| DeepSeek Harness unreachable from the browser | Forward its port through VS Code (Ports tab) or open an SSH tunnel - see `Run_Stop_Project.docx` |
+| DeepSeek Harness unreachable from the browser | It listens on the host loopback; forward it from a host window or use an SSH tunnel (section above) |
+| `ssh: Could not resolve hostname` in a tunnel command | The documentation used `server.example.com` and `alice` as placeholders: substitute your real host and user |

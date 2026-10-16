@@ -23,3 +23,14 @@ services:
     # Keeps the container usable when the host runs SELinux; ignored elsewhere.
     security_opt:
       - label=disable
+    #
+    # Reaching a service that listens on the *host* loopback (for example DeepSeek
+    # Harness on 127.0.0.1:3080) needs host networking: in the default bridge network
+    # the container's 127.0.0.1 is its own loopback, and the docker gateway
+    # (172.17.0.1) cannot reach a loopback-only listener - measured on this project:
+    # bridge -> ConnectionRefused / Timeout, host networking -> reachable.
+    #
+    # Uncomment to enable it (Linux hosts; the container then shares the host network
+    # namespace, so forwarded ports come from the host's interfaces):
+    #
+    # network_mode: host

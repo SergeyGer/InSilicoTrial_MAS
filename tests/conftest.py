@@ -25,6 +25,21 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL_PATH = REPO_ROOT / "conf" / "trial_protocol_demo.yaml"
 
 
+@pytest.fixture(autouse=True)
+def _isolate_local_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the test suite away from the developer's own artefacts.
+
+    ``storage.local_root`` defaults to the relative path ``artifacts/lake``, so
+    without this every test would append to the lake in the working directory. That
+    stays invisible in CI (a clean checkout) but breaks on a machine where the project
+    has been run before: retention keeps the last 32 versions, so a test that asks for
+    version 1 fails once the lake is older than that. The same applies to the default
+    output directory.
+    """
+    monkeypatch.setenv("INSILICO_STORAGE__LOCAL_ROOT", str(tmp_path / "lake"))
+    monkeypatch.setenv("INSILICO_OUTPUT_DIR", str(tmp_path / "artifacts"))
+
+
 def _fast_config(**overrides) -> dict:
     """A tiny, fully offline configuration for fast tests."""
     payload = {
@@ -59,6 +74,7 @@ def protocol() -> TrialProtocol:
 def config(tmp_path: Path) -> SimulationConfig:
     payload = _fast_config()
     payload["output_dir"] = str(tmp_path / "artifacts")
+    payload.setdefault("storage", {})["local_root"] = str(tmp_path / "lake")
     config = load_config(None, payload)
     config.protocol_path = str(PROTOCOL_PATH)
     return config
