@@ -40,8 +40,10 @@ ensure_file() {
 }
 
 count_keys() {
+  # awk never fails on an empty file, unlike `grep -c` whose non-zero exit status
+  # would make a `|| echo 0` fallback print a second "0" and break the numeric test.
   [ -f "$AUTH_KEYS" ] || { echo 0; return; }
-  grep -c -v '^\s*$\|^\s*#' "$AUTH_KEYS" 2>/dev/null || echo 0
+  awk 'NF && $1 !~ /^#/' "$AUTH_KEYS" | wc -l | tr -d ' '
 }
 
 normalise_line() {
