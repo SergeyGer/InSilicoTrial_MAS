@@ -177,6 +177,26 @@ Three ways to get to the UI, in order of convenience:
 3. **Forward it from a host window instead** - open the folder with Remote-SSH (not
    "Reopen in Container") in a second window and forward 3080 there.
 
+### Dynamic IPs, VPNs and fail2ban
+
+Do not add your laptop's address to `ignoreip` on a shared server. Developers on a VPN or a
+mobile connection get a different source address every time, so the exemption stops helping
+within hours - and once that address is reassigned or shared, the exemption protects someone
+else's traffic. Remove the possibility of a ban instead:
+
+```
+# ~/.ssh/config on each laptop, inside the Host block for the server
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PreferredAuthentications publickey
+```
+
+With these lines the client never sends a password, so a typo cannot produce the failed
+password attempt that fail2ban counts; a missing key fails loudly with
+`Permission denied (publickey)` instead of silently offering a password prompt. Combined with
+`IdentitiesOnly yes` the connection is key-only end to end, and the server-side
+`PasswordAuthentication no` becomes a formality rather than a risk.
+
 ## Troubleshooting
 
 | Symptom | Fix |
