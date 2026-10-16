@@ -26,8 +26,33 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-PROJECT_NAME="insilico-trial-mas"      # keep in sync with `name:` in docker-compose.yml
-STUDIO_PORT="${INSILICO_STUDIO_PORT:-8765}"
+# On a shared server each developer works under their own compose project name and
+# port, so two people in the same checkout never collide. Both can be pinned in .env.
+DEFAULT_PROJECT="insilico-trial-mas-$(id -un 2>/dev/null || echo dev)"
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-$DEFAULT_PROJECT}"
+PROJECT_NAME="$COMPOSE_PROJECT_NAME"
+
+# Port: honour an explicit INSILICO_STUDIO_PORT, otherwise take the first free one.
+free_port() {
+  local candidate
+  for candidate in $(seq "${1:-8765}" "$(( ${1:-8765} + 30 ))"); do
+    if command -v ss >/dev/null 2>&1; then
+      ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$candidate\$" || { echo "$candidate"; return; }
+    else
+      (exec 3<>"/dev/tcp/127.0.0.1/$candidate") 2>/dev/null || { echo "$candidate"; return; }
+    fi
+  done
+  echo "$1"
+}
+
+if [[ -n "${INSILICO_STUDIO_PORT:-}" ]]; then
+  STUDIO_PORT="$INSILICO_STUDIO_PORT"
+  PORT_IS_PINNED="true"
+else
+  STUDIO_PORT="$(free_port 8765)"
+  PORT_IS_PINNED="false"
+fi
+export INSILICO_STUDIO_PORT="$STUDIO_PORT"
 
 bold() { printf '\033[1m%s\033[0m\n' "$1"; }
 step() { printf '\n\033[1;36m==> %s\033[0m\n' "$1"; }
@@ -101,12 +126,9 @@ action_start() {
   esac
 
   if [[ "$target" == "all" || "$target" == "studio" ]]; then
-    if port_busy && ! compose ps --status running --services 2>/dev/null | grep -q '^studio$'; then
-      warn "port $STUDIO_PORT is already in use by another process"
-      warn "start with a different port:  INSILICO_STUDIO_PORT=8877 bash scripts/project.sh start studio"
-    else
-      ok "Studio: http://localhost:$STUDIO_PORT"
-    fi
+    ok "compose project: $PROJECT_NAME"
+    ok "Studio: http://localhost:$STUDIO_PORT"
+    [[ "$PORT_IS_PINNED" == "false" ]] && ok "(port chosen automatically; pin it in .env to keep it)"
     ok "stop it later with: bash scripts/project.sh stop"
   fi
 }
@@ -138,6 +160,10 @@ action_purge() {
 action_status() {
   require_docker
   step "This project: $PROJECT_NAME"
+  local published
+  published="$(compose port studio 8765 2>/dev/null | head -1 | awk -F: '{print $NF}')"
+  echo "    studio port : ${published:-$STUDIO_PORT (not running)}"
+  echo "    volume      : ${PROJECT_NAME}_artifacts"
   local running
   running="$(compose ps --format '{{.Service}}\t{{.Status}}\t{{.Ports}}' 2>/dev/null || true)"
   if [[ -z "$running" ]]; then
@@ -195,8 +221,9 @@ action_doctor() {
   elif port_busy; then
     warn "port $STUDIO_PORT is used by something else - set INSILICO_STUDIO_PORT"
   else
-    ok "port $STUDIO_PORT is free"
+    ok "port $STUDIO_PORT is free (this project would use $STUDIO_PORT)"
   fi
+  echo "    other developers' stacks keep their own COMPOSE_PROJECT_NAME and port"
 
   step "Autostart after a reboot"
   ok "every service declares restart: \"no\""

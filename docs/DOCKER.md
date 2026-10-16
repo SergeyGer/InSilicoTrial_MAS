@@ -312,7 +312,8 @@ docker inspect --format '{{.Name}}: {{.HostConfig.RestartPolicy.Name}}' $(docker
 
 | Mechanism | Effect |
 | --- | --- |
-| `name: insilico-trial-mas` in `docker-compose.yml` | containers, network and volume are prefixed, so two checkouts never share state |
+| `COMPOSE_PROJECT_NAME` (default `insilico-trial-mas-<user>`) | containers, network and volume are prefixed per developer, so two people on one server never share state |
+| `INSILICO_STUDIO_PORT` | the start scripts take the first free port from 8765 when it is unset, and pin it when it is set in `.env` |
 | `INSILICO_STUDIO_PORT` (default 8765) | the published port is the one resource that is genuinely shared; set it in `.env` when another project already owns 8765 |
 | `docker compose ls` | lists every stack running on the machine; `project.sh status` prints it for you |
 | scripts | never call `docker stop $(docker ps -q)` or `docker system prune`; `purge` deletes only this project's volume, after confirmation |

@@ -57,6 +57,52 @@ Note what that means: anything running in the container can then control the Doc
 daemon of the host, which is equivalent to root on the host. Enable it on a trusted
 machine only.
 
+## Several developers, one Linux server
+
+The usual setup for a team: VS Code runs on a Windows laptop, the code and the
+containers live on a shared Linux server.
+
+1. On the laptop install **Remote - SSH** (`ms-vscode-remote.remote-ssh`) **and**
+   Dev Containers, and add the server to `~/.ssh/config`:
+
+   ```sshconfig
+   Host insilico
+       HostName server.example.com
+       User alice
+       IdentityFile ~/.ssh/id_ed25519
+   ```
+
+2. `F1 -> Remote-SSH: Connect to Host -> insilico`, then open **your own clone**
+   (`~/work/alice/InSilicoTrial_MAS`) - not a directory shared with a colleague.
+3. `F1 -> Dev Containers: Reopen in Container`. The container is built and runs **on
+   the server**; the editor, the browser and the port forwarding live on the laptop.
+4. Set your own namespace once, in `.env` next to the clone:
+
+   ```dotenv
+   COMPOSE_PROJECT_NAME=insilico-alice
+   INSILICO_STUDIO_PORT=8765
+   ```
+
+   Containers, network and the results volume are then prefixed with your name, so
+   two developers never share state. The start scripts choose a free port
+   automatically when `INSILICO_STUDIO_PORT` is not set.
+
+Closing the VS Code window stops the dev container (`shutdownAction: stopCompose`);
+the project's own stack keeps running until `scripts/project.sh stop`.
+
+## Synchronising a team
+
+Git is the only shared source of truth; everything else is either derived or local.
+
+| Item | How it stays in sync |
+| --- | --- |
+| Code | `git pull --ff-only`, feature branches, pull requests |
+| Toolchain | the container image is built from the same `Dockerfile`; rebuild after it changes |
+| Python dependencies | `pyproject.toml` ranges, updated by Dependabot |
+| Local settings | `.env` per developer (never committed); `.env.example` is the template |
+| Results | per-developer volume; share a report with `docker compose cp` |
+| Reproducibility | the same seed gives identical rows on different machines (`make verify-repro`) |
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -66,3 +112,5 @@ machine only.
 | Files are not writable | `updateRemoteUserUID` is enabled; rebuild the container so the user id matches your account |
 | `import insilico_trial_mas` fails | Run `pip install -e ".[dev]"` in the container terminal |
 | Spark tests are skipped | They need a JVM: rebuild with the `spark` service, or run `bash scripts/bootstrap.sh --spark` on the host |
+| Port 8765 forwarded to the wrong stack | Two developers share the port: set `INSILICO_STUDIO_PORT` per developer in `.env` |
+| DeepSeek Harness unreachable from the browser | Forward its port through VS Code (Ports tab) or open an SSH tunnel - see `Run_Stop_Project.docx` |

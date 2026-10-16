@@ -16,7 +16,10 @@
 #  the container's default provider is the deterministic offline one.
 # ============================================================================
 
-name: insilico-trial-mas
+# The compose project name namespaces containers, network and volume. On a shared
+# server every developer sets COMPOSE_PROJECT_NAME (for example in .env) so two
+# people can work in the same checkout without collisions.
+name: ${COMPOSE_PROJECT_NAME:-insilico-trial-mas}
 
 x-image: &image
   build:

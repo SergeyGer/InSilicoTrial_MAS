@@ -32,8 +32,29 @@ $ErrorActionPreference = "Stop"
 $RootDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 Set-Location $RootDir
 
-$ProjectName = "insilico-trial-mas"          # keep in sync with `name:` in docker-compose.yml
-if ($Port -eq 0) { $Port = if ($env:INSILICO_STUDIO_PORT) { [int]$env:INSILICO_STUDIO_PORT } else { 8765 } }
+# On a shared server each developer works under their own compose project name and
+# port, so two people in the same checkout never collide. Both can be pinned in .env.
+if (-not $env:COMPOSE_PROJECT_NAME) {
+    $user = if ($env:USERNAME) { $env:USERNAME } elseif ($env:USER) { $env:USER } else { "dev" }
+    $env:COMPOSE_PROJECT_NAME = "insilico-trial-mas-$user"
+}
+$ProjectName = $env:COMPOSE_PROJECT_NAME
+
+function Find-FreePort {
+    param([int] $Start)
+    for ($candidate = $Start; $candidate -le $Start + 30; $candidate++) {
+        $client = [System.Net.Sockets.TcpClient]::new()
+        try { $client.Connect("127.0.0.1", $candidate) }
+        catch { $client.Dispose(); return $candidate }
+        finally { $client.Dispose() }
+    }
+    return $Start
+}
+
+if ($Port -eq 0) {
+    if ($env:INSILICO_STUDIO_PORT) { $Port = [int]$env:INSILICO_STUDIO_PORT; $script:PortPinned = $true }
+    else { $Port = Find-FreePort -Start 8765; $script:PortPinned = $false }
+}
 $env:INSILICO_STUDIO_PORT = "$Port"
 $env:DOCKER_CLI_HINTS = "false"
 
@@ -107,7 +128,9 @@ function Start-ProjectService {
         default  { Fail "unknown service: $Name (studio, demo, spark, dev, test, all)" }
     }
     if ($Name -eq "all" -or $Name -eq "studio") {
+        Write-Ok "compose project: $ProjectName"
         Write-Ok "Studio: http://localhost:$Port"
+        if (-not $PortPinned) { Write-Ok "(port chosen automatically; pin it in .env to keep it)" }
         if (Test-PortBusy -Number $Port) {
             $owner = (docker ps --filter "publish=$Port" --format "{{.Names}}" | Select-Object -First 1)
             if ($owner) { Write-Ok "port $Port is served by $owner" }
@@ -145,6 +168,10 @@ function Remove-ProjectStack {
 function Show-ProjectStatus {
     Assert-Docker
     Write-Step "This project: $ProjectName"
+    $published = (docker compose port studio 8765 2>$null | Select-Object -First 1)
+    if ($published) { $published = $published.Split(":")[-1] } else { $published = "$Port (not running)" }
+    Write-Host "    studio port : $published"
+    Write-Host "    volume      : ${ProjectName}_artifacts"
     $running = docker compose ps --format "{{.Service}}`t{{.Status}}`t{{.Ports}}" 2>$null
     if (-not $running) { Write-Host "    nothing is running" } else { $running | ForEach-Object { Write-Host "    $_" } }
 
