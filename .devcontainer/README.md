@@ -106,9 +106,11 @@ environment.
 
 Adding a laptop takes about ten minutes:
 
-1. Generate a key **on that laptop** (`ssh-keygen -t ed25519`) and append its public
-   part to `~/.ssh/authorized_keys` on the server. One key per device can be revoked
-   on its own.
+1. Generate a key **on that laptop**
+   (`ssh-keygen -t ed25519 -C "laptop-home-2026-10"` - the comment names the device)
+   and append its public part to `~/.ssh/authorized_keys` on the server. One key per
+   device can be revoked on its own; `scripts/ssh_keys.sh list|add|revoke|check` does it
+   and prints the fingerprint-to-device table.
 2. Copy the `Host insilico` block into `%USERPROFILE%\.ssh\config`, keep
    `ForwardAgent yes`.
 3. Install VS Code and the extensions this repository recommends

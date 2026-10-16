@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   offline persona provider, ships with a `/api/config` healthcheck and publishes to
   GHCR on tagged releases.
 
+### Added
+
+- `scripts/ssh_keys.sh` - manages the SSH keys that may log into the account:
+  `list` (fingerprint, type and the device comment, so it is obvious which laptop owns
+  which key), `add` (validates, refuses duplicates, backs up, normalises permissions),
+  `revoke` (by fingerprint), `check` (permissions, sshd policy, authentication activity)
+  and `test` (a publickey-only login attempt).
+
 ### Changed
 
 - Documentation rebuilt around two audiences: a recruiter-facing README (what the
