@@ -15,6 +15,8 @@ Nothing is installed on your machine except Docker and the Dev Containers extens
 | Python | `/opt/venv/bin/python` — the same interpreter that runs the CLI |
 | Ports | `8765` is forwarded for the Studio, with a notification when it opens |
 | Lifecycle | the container starts when you open the folder and stops when you close the window (`shutdownAction: stopCompose`) |
+| Init process | `init: true` runs tini as PID 1, so processes that VS Code, terminals and test runs leave behind are reaped instead of piling up as zombies |
+| Healthcheck | none: the Studio probe belongs to the `runtime` image, and a dev container that never serves HTTP must not report itself unhealthy |
 
 ## Files
 

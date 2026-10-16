@@ -136,6 +136,11 @@ RUN python -m pip install ".[dev]" \
  && chmod -R a+rX /app \
  && chown -R "${APP_UID}:${APP_GID}" /app
 
+# Drop the Studio healthcheck inherited from the runtime stage: this image runs
+# shells, tests and scripts, never the web server, so the probe would report a
+# permanently unhealthy container (observed: 157 failed checks on a dev container).
+HEALTHCHECK NONE
+
 ENV PYTHONPATH=/app/src
 USER insilico
 # Clear the CLI entrypoint inherited from the runtime stage: `docker run <dev-image>
@@ -179,6 +184,9 @@ RUN apt-get update \
 # amd64 (java-17-openjdk-amd64) and arm64 (java-17-openjdk-arm64), and the docs
 # promise that both architectures build.
 RUN ln -sfn "$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")" /usr/lib/jvm/default-java
+
+# One-shot simulation image: no long-running service to probe.
+HEALTHCHECK NONE
 
 ENV JAVA_HOME=/usr/lib/jvm/default-java \
     INSILICO_ENGINE__BACKEND=spark

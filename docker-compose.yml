@@ -31,6 +31,10 @@ x-image: &image
 
 x-runtime: &runtime
   <<: *image
+  # `init: true` runs tini as PID 1. Without it the container's command is PID 1 and
+  # never reaps orphaned children, so every process VS Code, a terminal or a test run
+  # leaves behind stays as a zombie for the lifetime of the container.
+  init: true
   volumes:
     - artifacts:/data/artifacts
   env_file:
@@ -79,6 +83,7 @@ services:
   # Databricks-equivalent local run: same code path, Spark engine, JVM included.
   spark:
     profiles: ["spark"]
+    init: true
     build:
       context: .
       target: spark
@@ -107,6 +112,7 @@ services:
   # Interactive shell with the dev extras, tests and linters installed.
   dev:
     profiles: ["tools"]
+    init: true
     build:
       context: .
       target: dev
