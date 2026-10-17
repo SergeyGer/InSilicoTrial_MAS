@@ -66,6 +66,12 @@ crash.log
 Run_Stop_Project.docx
 *.local.docx
 
+# The generators of those documents are personal tooling too: they belong on the
+# author's machine, not in the product, and must never be pushed by accident.
+build_run_stop*.py
+build_*_docx.py
+*.local.py
+
 # --- PowerShell and editor runtime files ----------------------------------
 # PowerShell writes these next to its working directory; they are noise, not code.
 ModuleAnalysisCache-*
