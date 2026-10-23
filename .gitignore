@@ -83,3 +83,9 @@ StartupProfileData-*
 .vscode/*.log
 *.swp
 .DS_Store
+
+# --- Secrets that must never be committed -----------------------------------
+# A token written to a file is one `git add -A` away from a public repository.
+.git-token
+.git-token*
+*.token

@@ -142,6 +142,15 @@ engineer, analyst or product manager needs is in the
 | [Observability and Troubleshooting](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Observability-and-Troubleshooting) | [Data Model](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Data-Model) | [User Interface](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/User-Interface) |
 | [FAQ](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/FAQ) · [Glossary](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Glossary) | [Ethics and Limitations](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Ethics-and-Limitations) | [Security](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Security) · [Testing](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Testing-and-Verification) |
 
+Two documents answer the questions that come up most often when the platform is
+reviewed rather than used:
+
+| Question | Document |
+| --- | --- |
+| How are LLM answers kept from distorting the results? | [LLM quality and guardrails](docs/LLM_QUALITY.md) — the eight controls with the code that implements them, failure modes, and how to audit a run |
+| How do I run, stop and troubleshoot the deployment? | `Run_Stop_Project.docx` (personal runbook, deliberately not committed — see `.gitignore`) |
+
+
 ## Project status
 
 | | |
