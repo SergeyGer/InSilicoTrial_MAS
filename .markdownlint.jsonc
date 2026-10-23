@@ -1,0 +1,9 @@
+{
+  // Presentation choices that are deliberate in this repository:
+  // README starts with a centred badge block, and its tables/badges are wider than
+  // 80 columns by design. Everything else is enforced.
+  "MD013": false,
+  "MD033": false,
+  "MD041": false,
+  "MD024": { "siblings_only": true }
+}

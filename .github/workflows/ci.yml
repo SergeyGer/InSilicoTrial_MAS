@@ -259,3 +259,22 @@ jobs:
           print(f"bundle ok: {len(resources['jobs'])} job(s), "
                 f"{sum(len(j.get('tasks', [])) for j in resources['jobs'].values())} task(s)")
           PY
+
+  docs-quality:
+    name: Docs quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Markdown lint
+        run: npx --yes markdownlint-cli2 "README.md" "docs/**/*.md"
+      - name: Link check (README and docs)
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work lycheeverse/lychee:latest \
+            --config /work/.lychee.toml --no-progress "README.md" "docs/*.md"
+      - name: Link check (wiki)
+        run: |
+          git clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.wiki.git" wiki
+          docker run --rm -v "$PWD/wiki:/wiki" -v "$PWD/.lychee.toml:/lychee.toml:ro" \
+            lycheeverse/lychee:latest --config /lychee.toml --no-progress \
+            --max-concurrency 6 --base-url "https://github.com/${GITHUB_REPOSITORY}/wiki/" \
+            "/wiki/*.md"

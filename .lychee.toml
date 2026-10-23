@@ -1,0 +1,17 @@
+# Link checking for the repository documentation (README and docs/).
+# The wiki is checked separately by the Docs quality job, which clones the wiki repo.
+
+max_concurrency = 8
+max_retries = 2
+retry_wait_time = 2
+timeout = 20
+
+# Local Studio URLs appear as examples in the docs; there is no server behind them.
+exclude = [
+  "^http://localhost",
+  "^http://127\\.0\\.0\\.1",
+]
+
+# Accept redirects and rate-limited answers: GitHub returns 429 under load and the
+# retries above usually settle it.
+accept = [200, 206, 301, 302, 307, 308, 429]

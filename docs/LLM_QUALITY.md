@@ -13,7 +13,7 @@ they feel) and is treated as untrusted input at every step.
 ## Where the model is used
 
 | Surface | Module | Role |
-|---|---|---|
+| --- | --- | --- |
 | Patient persona | `src/insilico_trial_mas/agents/patient_agent.py` | narrates symptoms per epoch; may escalate severity and add terms the model did not predict |
 | Protocol agent | `src/insilico_trial_mas/agents/protocol_agent.py` | validates the protocol deterministically; does not call an LLM for decisions |
 | Biostatistician | `src/insilico_trial_mas/agents/biostatistician_agent.py` | recomputes statistics from data; `llm_reported_patients` records how much of a safety table came from the model |
@@ -124,7 +124,7 @@ the remaining rows differ between engines. That is also a CI step
 ### 8. Verification in CI
 
 | Check | What it proves |
-|---|---|
+| --- | --- |
 | `pytest -q tests/test_llm.py` | parsing, repair, safety filter, clamping, cache, rate limiting |
 | `pytest -q tests/test_calibration.py` | the *output* stays clinically plausible: exposure in range, efficacy separation between arms, non-catastrophic safety rates |
 | `python scripts/verify_reproducibility.py --patients 400 --epochs 4` | two runs are bit-identical apart from the two documented columns |
@@ -137,7 +137,7 @@ a smaller scale.
 ## Failure modes and what happens
 
 | Failure | Detection | Consequence |
-|---|---|---|
+| --- | --- | --- |
 | Model returns prose instead of JSON | `_extract_payload` then `parse_error` | symptom list empty; run continues; `llm_error` recorded |
 | JSON is almost valid (fences, trailing commas) | repair strategies | accepted, `repaired=True` is kept for audit |
 | Grade out of range or wrong type | `_coerce_grade` | clamped to a valid CTCAE grade |
