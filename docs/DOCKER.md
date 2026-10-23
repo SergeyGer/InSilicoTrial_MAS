@@ -107,7 +107,7 @@ weakening the image.
 
 Every run writes a self-contained readout, so the results are portable:
 
-```
+```text
 /data/artifacts/demo/RUN-…/
   run_manifest.json                      # provenance, digests, replay command
   report/trial_report.md, .html          # narrative report
@@ -273,6 +273,7 @@ The image is architecture-neutral apart from the JVM in the `spark` target, whic
   image that is `/data`, not the checkout root.
 * **Four targets instead of four Dockerfiles**: they share the same builder layers,
   so `--target dev` and `--target test` cost almost nothing extra.
+
 ---
 
 ## 10. Starting, stopping and switching between projects

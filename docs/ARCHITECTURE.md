@@ -254,7 +254,7 @@ why the response cache exists (section 8).
 
 `ml/physiology.py` composes an auditable mechanistic backbone with a learned residual head:
 
-```
+```text
 final_biomarker = mechanistic(baseline, PK/PD, placebo, progression) + ridge_residual(features)
 ```
 
@@ -304,8 +304,7 @@ Measurement noise is added only to the observed value, using `MEASUREMENT_NOISE 
 "dbp": 1.5, "hr": 2.0, "qtc_ms": 5.0, "alt_pct": 0.08}`; ALT is multiplied by
 `max(0.5, 1 + N(0, 0.08))`.
 
-`biomarker_composite = -(sbp - sbp0)/20 - (dbp - dbp0)/12 - 0.4*(hr - hr0)/10
-- 0.3*max(0, qtc - 450)/30 - 0.5*max(0, alt/alt0 - 1)`.
+`biomarker_composite = -(sbp - sbp0)/20 - (dbp - dbp0)/12 - 0.4*(hr - hr0)/10 - 0.3*max(0, qtc - 450)/30 - 0.5*max(0, alt/alt0 - 1)`.
 
 ### 7.3 Adverse-event risk
 

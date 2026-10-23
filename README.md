@@ -150,7 +150,6 @@ reviewed rather than used:
 | How are LLM answers kept from distorting the results? | [LLM quality and guardrails](docs/LLM_QUALITY.md) — the eight controls with the code that implements them, failure modes, and how to audit a run |
 | How do I run, stop and troubleshoot the deployment? | `Run_Stop_Project.docx` (personal runbook, deliberately not committed — see `.gitignore`) |
 
-
 ## Project status
 
 | | |

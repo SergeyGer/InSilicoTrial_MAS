@@ -378,7 +378,7 @@ for one.
 
 Layout written by `LocalVersionedStore`:
 
-```
+```text
 <local_root>/<schema>/<table>/_manifest.json
 <local_root>/<schema>/<table>/_version=000001/part-00000.parquet
 <local_root>/<schema>/<table>/_version=000002/arm_id=placebo/part-00000.parquet   # when partitioned

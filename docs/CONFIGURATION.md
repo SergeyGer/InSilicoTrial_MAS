@@ -112,10 +112,12 @@ Three supported patterns, in order of preference:
    reaches S3 and Bedrock.
 2. **Secret scope** — read at runtime and inject into the environment before the
    pipeline starts:
+
    ```python
    import os
    os.environ["OPENAI_API_KEY"] = dbutils.secrets.get("insilico-llm", "openai_api_key")  # noqa: F821
    ```
+
    Never write the value into a notebook cell, a Delta table or a log line.
 3. **Cluster environment variables** — set `AWS_REGION`, `INSILICO_LLM__PROVIDER`
    and friends in the cluster's *Advanced options → Spark → Environment variables*.
