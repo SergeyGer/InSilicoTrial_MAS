@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import pathlib
 import re
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -65,7 +66,9 @@ def test_story_is_self_contained(build_story) -> None:
     assert "<iframe" not in page
     # The only absolute URLs allowed are navigational links, never loads.
     for url in re.findall(r'(?:src|href)="(https?://[^"]+)"', page):
-        assert url.startswith("https://example.test"), url
+        parts = urlsplit(url)
+        assert parts.scheme in {"http", "https"}, url
+        assert parts.hostname == "example.test", url
 
 
 def test_story_quotes_the_run_it_describes(build_story) -> None:

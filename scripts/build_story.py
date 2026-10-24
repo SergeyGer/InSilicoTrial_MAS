@@ -23,19 +23,7 @@ import json
 import pathlib
 from typing import Any
 
-#: Steps carry the value shown in the sticky panel and in the text, so the page is
-#: complete and readable even with JavaScript disabled.
-STEPS: tuple[tuple[str, str], ...] = (
-    ("screening", "The cohort"),
-    ("allocation", "Who got what"),
-    ("exposure", "Exposure and effect"),
-    ("safety", "Safety"),
-    ("estimate", "The estimate"),
-    ("verdict", "The verdict"),
-)
-
-
-#: Page script: keeps the sticky card in sync with the step in view.
+#: Sticky-card synchronisation: no framework, no dependencies, degrades without JS.
 SCRIPT = """  (function () {
     var steps = Array.prototype.slice.call(document.querySelectorAll('.step[data-step]'));
     if (!steps.length || !('IntersectionObserver' in window)) return;
@@ -60,6 +48,7 @@ SCRIPT = """  (function () {
     }, { rootMargin: '-45% 0px -45% 0px' });
     steps.forEach(function (step) { observer.observe(step); });
   })();"""
+
 
 def _get(payload: dict[str, Any], key: str, default: Any = 0.0) -> Any:
     value = payload.get(key, default)
