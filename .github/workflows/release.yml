@@ -100,6 +100,8 @@ jobs:
 
       - name: Runtime image
         run: |
+          # GHCR path = repository slug lower-cased: InSilicoTrial_MAS ->
+          # insilicotrial_mas (the underscore stays, there is no hyphen in the slug).
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
           version="${GITHUB_REF_NAME#v}"
           docker build --target runtime \
@@ -110,6 +112,8 @@ jobs:
 
       - name: Spark image
         run: |
+          # GHCR path = repository slug lower-cased: InSilicoTrial_MAS ->
+          # insilicotrial_mas (the underscore stays, there is no hyphen in the slug).
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
           version="${GITHUB_REF_NAME#v}"
           docker build --target spark \
@@ -120,6 +124,8 @@ jobs:
 
       - name: Smoke-test the published image
         run: |
+          # GHCR path = repository slug lower-cased: InSilicoTrial_MAS ->
+          # insilicotrial_mas (the underscore stays, there is no hyphen in the slug).
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
           docker run --rm "${image}:latest" demo --patients 100 --epochs 3
 

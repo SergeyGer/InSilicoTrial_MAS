@@ -214,9 +214,19 @@ Tagged releases build the runtime and Spark images and push them to GitHub
 Container Registry (`.github/workflows/release.yml`):
 
 ```bash
-docker pull ghcr.io/sergeyger/insilico-trial-mas:1.0.0
-docker pull ghcr.io/sergeyger/insilico-trial-mas:spark
+docker pull ghcr.io/sergeyger/insilicotrial_mas:1.0.0       # runtime image
+docker pull ghcr.io/sergeyger/insilicotrial_mas:latest
+docker pull ghcr.io/sergeyger/insilicotrial_mas:1.0.0-spark # JVM + Spark
+docker pull ghcr.io/sergeyger/insilicotrial_mas:spark
 ```
+
+The registry path is the repository slug in lower case, so the underscore of
+`InSilicoTrial_MAS` stays and the hyphen of the project name does not appear:
+`ghcr.io/sergeyger/insilicotrial_mas`. The local build tags used by compose and the
+Makefile keep the hyphen (`insilico-trial-mas:local`) — they are a different namespace
+and never leave the machine.
+
+Both packages are public: the commands above work without `docker login`.
 
 Build for another architecture with buildx:
 
