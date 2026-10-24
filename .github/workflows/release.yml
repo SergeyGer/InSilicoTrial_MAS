@@ -49,6 +49,7 @@ jobs:
           /tmp/verify/bin/python -m pip install --upgrade pip
           /tmp/verify/bin/python -m pip install "$GITHUB_WORKSPACE"/dist/*.whl
           /tmp/verify/bin/insilico-trial --version
+          /tmp/verify/bin/python -c "import insilico_trial_mas as m; assert '/tmp/verify' in m.__file__, m.__file__; print('imported from', m.__file__)"
           /tmp/verify/bin/insilico-trial env-check --json > /tmp/env.json
           /tmp/verify/bin/python - <<'PY'
           import json, pathlib
@@ -58,7 +59,6 @@ jobs:
           PY
 
       - name: Smoke-test the installed package end to end
-        working-directory: /tmp
         env:
           PYTHONPATH: ""
         run: |
