@@ -7,46 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **Docker support**: multi-stage `Dockerfile` with four targets (`runtime`, `spark`,
-  `dev`, `test`), a `docker-compose.yml` stack (Studio, one-shot demo, Spark, dev
-  shell, build-time test gate), `.dockerignore`, eight `make docker-*` targets and
-  [docs/DOCKER.md](docs/DOCKER.md). The image runs as uid 10001, defaults to the
-  offline persona provider, ships with a `/api/config` healthcheck and publishes to
-  GHCR on tagged releases.
-
-### Added
-
-- `scripts/ssh_keys.sh` - manages the SSH keys that may log into the account:
-  `list` (fingerprint, type and the device comment, so it is obvious which laptop owns
-  which key), `add` (validates, refuses duplicates, backs up, normalises permissions),
-  `revoke` (by fingerprint), `check` (permissions, sshd policy, authentication activity)
-  and `test` (a publickey-only login attempt).
-
-### Changed
-
-- Documentation rebuilt around two audiences: a recruiter-facing README (what the
-  platform does and why it matters, with screenshots and a generated product tour)
-  and a 24-page technical wiki covering the science, the platform, operations and
-  assurance. Screenshots and the tour are regenerated from the running application by
-  `scripts/capture_media.py` (`make media-capture`), so they cannot drift.
-- Stale figures corrected: the suite collects 231 tests (was documented as 206/220),
-  the scanner opened 24 alerts over the project (23 fixed, 1 dismissed), and the
-  required-check list now includes the Docker job.
-
-- Replaced the placeholder `Dockerfile` (a bare Ubuntu image that only opened a
-  shell) with the multi-stage build described above.
-
-- Terraform: raised the AWS provider constraint from `~> 5.50` to `~> 6.0` and
-  migrated the module to it (verified against 6.67.0, pinned in
-  `terraform/.terraform.lock.hcl`). The only breaking change that affected the
-  module is the provider 6.0 rename of `aws_batch_compute_environment`'s
-  `compute_environment_name` argument to `name`; the S3, IAM and Secrets Manager
-  resources the module uses are unchanged in 6.x, and so is the Databricks
-  provider constraint.
-
-## [1.0.0] - 2026-10-02
+## [1.0.0] - 2026-10-23
 
 First public release of InSilicoTrial MAS: a multi-agent platform that simulates a
 randomised clinical trial over a fully synthetic cohort, on a laptop or on
@@ -179,6 +140,43 @@ evidence (see `docs/ETHICS_AND_LIMITATIONS.md`).
 - Documentation set: architecture (with a test index for every claim), data model, UI design
   record, responsible-use and limitations statement, Databricks/AWS runbook and a
   specification-compliance mapping.
+
+### Documentation, tooling and deployment
+
+- **Docker support**: multi-stage `Dockerfile` with four targets (`runtime`, `spark`,
+  `dev`, `test`), a `docker-compose.yml` stack (Studio, one-shot demo, Spark, dev
+  shell, build-time test gate), `.dockerignore`, eight `make docker-*` targets and
+  [docs/DOCKER.md](docs/DOCKER.md). The image runs as uid 10001, defaults to the
+  offline persona provider, ships with a `/api/config` healthcheck and publishes to
+  GHCR on tagged releases.
+
+
+- `scripts/ssh_keys.sh` - manages the SSH keys that may log into the account:
+  `list` (fingerprint, type and the device comment, so it is obvious which laptop owns
+  which key), `add` (validates, refuses duplicates, backs up, normalises permissions),
+  `revoke` (by fingerprint), `check` (permissions, sshd policy, authentication activity)
+  and `test` (a publickey-only login attempt).
+
+
+- Documentation rebuilt around two audiences: a recruiter-facing README (what the
+  platform does and why it matters, with screenshots and a generated product tour)
+  and a 24-page technical wiki covering the science, the platform, operations and
+  assurance. Screenshots and the tour are regenerated from the running application by
+  `scripts/capture_media.py` (`make media-capture`), so they cannot drift.
+- Stale figures corrected: the suite collects 231 tests (was documented as 206/220),
+  the scanner opened 24 alerts over the project (23 fixed, 1 dismissed), and the
+  required-check list now includes the Docker job.
+
+- Replaced the placeholder `Dockerfile` (a bare Ubuntu image that only opened a
+  shell) with the multi-stage build described above.
+
+- Terraform: raised the AWS provider constraint from `~> 5.50` to `~> 6.0` and
+  migrated the module to it (verified against 6.67.0, pinned in
+  `terraform/.terraform.lock.hcl`). The only breaking change that affected the
+  module is the provider 6.0 rename of `aws_batch_compute_environment`'s
+  `compute_environment_name` argument to `name`; the S3, IAM and Secrets Manager
+  resources the module uses are unchanged in 6.x, and so is the Databricks
+  provider constraint.
 
 [Unreleased]: https://github.com/SergeyGer/InSilicoTrial_MAS/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/SergeyGer/InSilicoTrial_MAS/releases/tag/v1.0.0
