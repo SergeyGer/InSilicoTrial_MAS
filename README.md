@@ -13,6 +13,7 @@ go/no-go readout — dose by dose, adverse event by adverse event.
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](docs/DOCKER.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0b6e99.svg)](LICENSE)
 [![Wiki](https://img.shields.io/badge/docs-technical%20wiki-1c7c54.svg)](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki)
+[![Release](https://img.shields.io/github/v/release/SergeyGer/InSilicoTrial_MAS?label=release&color=0b6e99)](https://github.com/SergeyGer/InSilicoTrial_MAS/releases/latest)
 [![Live readout](https://img.shields.io/badge/demo-open%20the%20live%20readout-1c7c54.svg)](https://sergeyger.github.io/InSilicoTrial_MAS/)
 
 ## [Open the live readout →](https://sergeyger.github.io/InSilicoTrial_MAS/)
@@ -164,7 +165,7 @@ reviewed rather than used:
 
 | | |
 | --- | --- |
-| **Version** | 1.0.0 — every capability described above is implemented, tested and documented |
+| **Version** | [1.0.0](https://github.com/SergeyGer/InSilicoTrial_MAS/releases/tag/v1.0.0) — every capability described above is implemented, tested and documented; the release carries the wheel, the sdist and the GHCR images |
 | **Runs on** | A laptop (no cloud account), Docker, Databricks on AWS |
 | **Verification** | 231 automated tests, continuous integration on every change, security scanning, reproducible runs |
 | **Next** | See the [roadmap](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Roadmap) — adaptive dose-escalation designs, sparse PK sampling, external control arms |
