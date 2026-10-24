@@ -141,6 +141,11 @@ jobs:
           pattern = re.compile(rf"^## \[{re.escape(tag)}\].*?$(.*?)(?=^## \[|\Z)", re.M | re.S)
           match = pattern.search(text)
           body = match.group(1).strip() if match else "See CHANGELOG.md for details."
+          # Drop the link definitions at the bottom of the file so the release body is
+          # prose and bullets only.
+          body = "\n".join(
+              line for line in body.splitlines() if not re.match(r"^\[[^\]]+\]:\s", line)
+          ).strip()
           pathlib.Path("release-notes.md").write_text(body + "\n", encoding="utf-8")
           print(body[:400])
           PY
