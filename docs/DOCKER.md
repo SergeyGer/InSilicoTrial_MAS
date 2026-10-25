@@ -214,16 +214,19 @@ Tagged releases build the runtime and Spark images and push them to GitHub
 Container Registry (`.github/workflows/release.yml`):
 
 ```bash
-docker pull ghcr.io/sergeyger/insilico-trial-mas:1.0.0       # runtime image
-docker pull ghcr.io/sergeyger/insilico-trial-mas:latest
-docker pull ghcr.io/sergeyger/insilico-trial-mas:1.0.0-spark # JVM + Spark
-docker pull ghcr.io/sergeyger/insilico-trial-mas:spark
+docker pull ghcr.io/sergeyger/insilicotrial_mas:1.0.0       # runtime image
+docker pull ghcr.io/sergeyger/insilicotrial_mas:latest
+docker pull ghcr.io/sergeyger/insilicotrial_mas:1.0.0-spark # JVM + Spark
+docker pull ghcr.io/sergeyger/insilicotrial_mas:spark
 ```
 
-The image name is fixed in the release workflow to the project name
-(`insilico-trial-mas`) rather than derived from the repository slug, so it matches the
-local build tags that compose and the Makefile use. Both packages are public: the
-commands above work without `docker login`.
+The registry path follows the repository slug in lower case. GitHub only lets the
+workflow's own token write a package whose name matches the repository, so a custom
+name such as `insilico-trial-mas` requires a `GHCR_TOKEN` secret — with it set, the
+release publishes there instead and the commands above change accordingly. The switch
+is documented in [REPOSITORY_SETTINGS.md](REPOSITORY_SETTINGS.md#7-environments-secrets-and-labels).
+
+Both packages are public: the commands above work without `docker login`.
 
 Build for another architecture with buildx:
 

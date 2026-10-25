@@ -223,6 +223,24 @@ Labels to create (Settings -> Labels), beyond the two used by the issue forms:
 Milestones: `v1.0.0` (the initial release, close it when tagged) and `v1.1.0` for the next
 group of changes.
 
+### Publishing images under the project name
+
+By default the release workflow pushes `ghcr.io/<owner>/<repository-slug>`, because a
+`GITHUB_TOKEN` can only write packages whose name matches the repository; ours
+lower-cases to `insilicotrial_mas`. To publish as `insilico-trial-mas` instead:
+
+1. Create a classic personal access token with `write:packages` (and `read:packages`).
+2. Add it as the repository secret `GHCR_TOKEN`
+   (`Settings -> Secrets and variables -> Actions -> New repository secret`).
+3. Re-run the release: push a new tag, or run the workflow with an existing tag.
+   The workflow switches the image name automatically when the secret is present.
+4. Open the new package (`Profile -> Packages -> insilico-trial-mas`), then
+   `Package settings -> Danger Zone -> Change visibility -> Public`.
+5. Delete the old `insilicotrial_mas` package once nothing pulls it.
+
+Without the secret the workflow is not broken: it publishes under the slug and the
+release stays green.
+
 ## 8. How to apply via API
 
 **Preferred: the checked-in setup script.** `scripts/github_repo_setup.py` holds the intended
