@@ -88,6 +88,10 @@ jobs:
     name: Publish container images
     needs: build
     runs-on: ubuntu-latest
+    env:
+      # With a GHCR_TOKEN secret the image is published as insilico-trial-mas;
+      # without one, GITHUB_TOKEN limits us to the repository slug.
+      IMAGE_NAME: ${{ secrets.GHCR_TOKEN != '' && 'insilico-trial-mas' || 'insilicotrial_mas' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -95,14 +99,15 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+          # GITHUB_TOKEN can only write a package whose name matches the repository
+          # slug, so a custom image name needs a PAT with write:packages in
+          # secrets.GHCR_TOKEN. Without it the job still publishes, under the slug.
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN || github.token }}
 
       - name: Runtime image
         run: |
-          # The image name is the project name, not the repository slug: the slug
-          # (InSilicoTrial_MAS) lower-cases to a name that reads as one word.
-          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/insilico-trial-mas"
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"
           version="${GITHUB_REF_NAME#v}"
           docker build --target runtime \
             --build-arg VERSION="$version" \
@@ -112,9 +117,7 @@ jobs:
 
       - name: Spark image
         run: |
-          # The image name is the project name, not the repository slug: the slug
-          # (InSilicoTrial_MAS) lower-cases to a name that reads as one word.
-          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/insilico-trial-mas"
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"
           version="${GITHUB_REF_NAME#v}"
           docker build --target spark \
             --build-arg VERSION="$version" \
@@ -124,9 +127,7 @@ jobs:
 
       - name: Smoke-test the published image
         run: |
-          # The image name is the project name, not the repository slug: the slug
-          # (InSilicoTrial_MAS) lower-cases to a name that reads as one word.
-          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/insilico-trial-mas"
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"
           docker run --rm "${image}:latest" demo --patients 100 --epochs 3
 
   release:
