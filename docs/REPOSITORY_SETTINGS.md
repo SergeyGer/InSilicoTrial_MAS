@@ -225,6 +225,10 @@ group of changes.
 
 ### Publishing images under the project name
 
+**Status on this repository: applied.** The secret exists and releases publish
+`ghcr.io/<owner>/insilico-trial-mas`; the notes below are the recipe for a fork or a
+fresh clone.
+
 By default the release workflow pushes `ghcr.io/<owner>/<repository-slug>`, because a
 `GITHUB_TOKEN` can only write packages whose name matches the repository; ours
 lower-cases to `insilicotrial_mas`. To publish as `insilico-trial-mas` instead:
