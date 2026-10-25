@@ -18,6 +18,9 @@ permissions:
   packages: write
 
 env:
+  # A tag push uses the tag; a manual run uses the input, which the workflow
+  # header has always promised but never read.
+  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
   PYTHONPATH: src
   INSILICO_LOG_LEVEL: WARNING
 
@@ -108,7 +111,7 @@ jobs:
       - name: Runtime image
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           docker build --target runtime \
             --build-arg VERSION="$version" \
             -t "${image}:${version}" -t "${image}:latest" .
@@ -118,7 +121,7 @@ jobs:
       - name: Spark image
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           docker build --target spark \
             --build-arg VERSION="$version" \
             -t "${image}:${version}-spark" -t "${image}:spark" .
@@ -149,7 +152,7 @@ jobs:
         run: |
           python - <<'PY'
           import pathlib, re, os
-          tag = os.environ.get("GITHUB_REF_NAME", "").lstrip("v")
+          tag = os.environ.get("RELEASE_TAG", "").lstrip("v")
           text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
           pattern = re.compile(rf"^## \[{re.escape(tag)}\].*?$(.*?)(?=^## \[|\Z)", re.M | re.S)
           match = pattern.search(text)
@@ -167,7 +170,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "InSilicoTrial MAS ${GITHUB_REF_NAME}" \
+          # Re-running the release (for example after adding the GHCR_TOKEN secret)
+          # must replace the previous release instead of failing on an existing tag.
+          gh release delete "${RELEASE_TAG}" --yes || true
+          gh release create "${RELEASE_TAG}" \
+            --title "InSilicoTrial MAS ${RELEASE_TAG}" \
             --notes-file release-notes.md \
             dist/*
