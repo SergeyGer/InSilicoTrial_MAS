@@ -100,9 +100,9 @@ jobs:
 
       - name: Runtime image
         run: |
-          # GHCR path = repository slug lower-cased: InSilicoTrial_MAS ->
-          # insilicotrial_mas (the underscore stays, there is no hyphen in the slug).
-          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          # The image name is the project name, not the repository slug: the slug
+          # (InSilicoTrial_MAS) lower-cases to a name that reads as one word.
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/insilico-trial-mas"
           version="${GITHUB_REF_NAME#v}"
           docker build --target runtime \
             --build-arg VERSION="$version" \
@@ -112,9 +112,9 @@ jobs:
 
       - name: Spark image
         run: |
-          # GHCR path = repository slug lower-cased: InSilicoTrial_MAS ->
-          # insilicotrial_mas (the underscore stays, there is no hyphen in the slug).
-          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          # The image name is the project name, not the repository slug: the slug
+          # (InSilicoTrial_MAS) lower-cases to a name that reads as one word.
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/insilico-trial-mas"
           version="${GITHUB_REF_NAME#v}"
           docker build --target spark \
             --build-arg VERSION="$version" \
@@ -124,9 +124,9 @@ jobs:
 
       - name: Smoke-test the published image
         run: |
-          # GHCR path = repository slug lower-cased: InSilicoTrial_MAS ->
-          # insilicotrial_mas (the underscore stays, there is no hyphen in the slug).
-          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          # The image name is the project name, not the repository slug: the slug
+          # (InSilicoTrial_MAS) lower-cases to a name that reads as one word.
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/insilico-trial-mas"
           docker run --rm "${image}:latest" demo --patients 100 --epochs 3
 
   release:
