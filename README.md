@@ -75,6 +75,18 @@ The two remaining screens — the reproducibility audit and the agent/table/repo
 lineage graph — are in the
 [UI guide](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/User-Interface).
 
+## Watch the demo (90 seconds)
+
+[![Watch the 90-second demo](docs/media/demo-video-poster.png)](docs/media/insilico-trial-demo.mp4)
+
+A real session, not a mock-up: the Studio launches the phase II hypertension protocol on
+400 synthetic patients, the run executes, and the readout is generated from it. The patient
+personas in that run were written by a real LLM — DeepSeek, 128 calls, recorded in the run
+manifest — and the verdict on screen is derived from the run's own numbers.
+
+<sub>Direct link: [docs/media/insilico-trial-demo.mp4](docs/media/insilico-trial-demo.mp4)
+(85 s, 19.7 MB). Narration in English. The same run is reproducible with `make demo`.</sub>
+
 ## Try it in one command
 
 ```bash
@@ -112,7 +124,7 @@ infrastructure, security and documentation — by one engineer.
 | **Statistical rigour** | Confidence intervals, exact tests and multiplicity control implemented in-house so results are reproducible everywhere — no black-box dependency |
 | **Cloud and infrastructure as code** | Terraform provisions Unity Catalog, S3, IAM and service principals; a Databricks Asset Bundle deploys the job; containers package the whole platform |
 | **Product thinking** | Three audiences, three surfaces: a written report for clinicians, an interactive dashboard for reviewers, a live Studio for analysts who want to explore |
-| **Engineering discipline** | 231 automated tests, static analysis and container scanning on every change, automated dependency updates, and a documented decision behind every design trade-off |
+| **Engineering discipline** | 240 automated tests, static analysis and container scanning on every change, automated dependency updates, and a documented decision behind every design trade-off |
 | **Communication** | A recruiter-facing README, a technical wiki of twenty pages, generated architecture diagrams, and a product tour regenerated from the running application |
 
 **Technology keywords:** Python · Apache Spark · Delta Lake · MLflow · Unity Catalog ·
@@ -167,7 +179,7 @@ reviewed rather than used:
 | --- | --- |
 | **Version** | [1.0.0](https://github.com/SergeyGer/InSilicoTrial_MAS/releases/tag/v1.0.0) — every capability described above is implemented, tested and documented; the release carries the wheel, the sdist and the GHCR images |
 | **Runs on** | A laptop (no cloud account), Docker, Databricks on AWS |
-| **Verification** | 231 automated tests, continuous integration on every change, security scanning, reproducible runs |
+| **Verification** | 240 automated tests, continuous integration on every change, security scanning, reproducible runs |
 | **Next** | See the [roadmap](https://github.com/SergeyGer/InSilicoTrial_MAS/wiki/Roadmap) — adaptive dose-escalation designs, sparse PK sampling, external control arms |
 
 ## Responsible use
