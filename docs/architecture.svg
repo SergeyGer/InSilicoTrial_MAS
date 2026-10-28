@@ -8,7 +8,7 @@
 <rect x="1130" y="30" width="150" height="22" rx="11" fill="#e3f0f7"/>
 <text x="1205.0" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#0b6e99" text-anchor="middle">Databricks  ·  AWS</text>
 <rect x="1292" y="30" width="148" height="22" rx="11" fill="#e4f3ec"/>
-<text x="1366.0" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#1c7c54" text-anchor="middle">206 tests  ·  MIT</text>
+<text x="1366.0" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#1c7c54" text-anchor="middle">240 tests  ·  MIT</text>
 <rect x="40" y="92" width="1010" height="108" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
 <text x="58" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b6e99" letter-spacing="1.4">1  ENTRY POINTS</text>
 <rect x="40" y="216" width="1010" height="92" rx="12" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
@@ -90,8 +90,8 @@
 <text x="553" y="585.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" fill="#8798a8">one partition = one batch of patients; identical agent code</text>
 <rect x="236" y="686" width="758" height="22" rx="11" fill="#e4f3ec"/>
 <text x="615.0" y="701" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1c7c54" text-anchor="middle">Verified: the Spark engine reproduces the sequential engine bit-for-bit  (tests/test_engines.py)</text>
-<rect x="60" y="744" width="300" height="206" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
-<rect x="60" y="744" width="4" height="206" rx="2" fill="#a2701a"/>
+<rect x="60" y="744" width="300" height="240" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="60" y="744" width="4" height="240" rx="2" fill="#a2701a"/>
 <text x="76" y="768" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">bronze</text>
 <text x="76" y="786" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#a2701a">raw ingestion</text>
 <text x="76" y="803" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">synthetic_cohort</text>
@@ -99,8 +99,8 @@
 <text x="76" y="833" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">llm_raw_traces</text>
 <text x="76" y="848" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b"></text>
 <text x="76" y="863" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">append-only, replayable</text>
-<rect x="380" y="744" width="300" height="206" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
-<rect x="380" y="744" width="4" height="206" rx="2" fill="#0b6e99"/>
+<rect x="380" y="744" width="300" height="240" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="380" y="744" width="4" height="240" rx="2" fill="#0b6e99"/>
 <text x="396" y="768" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">silver</text>
 <text x="396" y="786" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#0b6e99">per-epoch simulation log</text>
 <text x="396" y="803" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">patient_states   (50 columns)</text>
@@ -111,8 +111,8 @@
 <text x="396" y="878" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">Delta time travel:</text>
 <text x="396" y="893" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">DESCRIBE HISTORY /</text>
 <text x="396" y="908" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">VERSION AS OF n</text>
-<rect x="700" y="744" width="330" height="206" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
-<rect x="700" y="744" width="4" height="206" rx="2" fill="#1c7c54"/>
+<rect x="700" y="744" width="330" height="240" rx="10" fill="#ffffff" stroke="#d7dee6" stroke-width="1"/>
+<rect x="700" y="744" width="4" height="240" rx="2" fill="#1c7c54"/>
 <text x="716" y="768" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="650" fill="#101c28">gold</text>
 <text x="716" y="786" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#1c7c54">decision-ready aggregates</text>
 <text x="716" y="803" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5a6b7b">arm_summaries</text>

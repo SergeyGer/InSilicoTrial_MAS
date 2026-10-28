@@ -190,7 +190,7 @@ def build() -> str:
         fill=MUTED,
     )
     chip(1130, 30, 150, "Databricks  ·  AWS", fill=ACCENT_SOFT, ink=ACCENT)
-    chip(1292, 30, 148, "206 tests  ·  MIT", fill=GREEN_SOFT, ink=GREEN)
+    chip(1292, 30, 148, "240 tests  ·  MIT", fill=GREEN_SOFT, ink=GREEN)
 
     # ---------------------------------------------------------------- bands
     band(40, 92, 1010, 108, "1  Entry points")
@@ -294,7 +294,7 @@ def build() -> str:
         60,
         744,
         300,
-        206,
+        240,
         "bronze",
         subtitle="raw ingestion",
         lines=(
@@ -310,7 +310,7 @@ def build() -> str:
         380,
         744,
         300,
-        206,
+        240,
         "silver",
         subtitle="per-epoch simulation log",
         lines=(
@@ -329,7 +329,7 @@ def build() -> str:
         700,
         744,
         330,
-        206,
+        240,
         "gold",
         subtitle="decision-ready aggregates",
         lines=(
