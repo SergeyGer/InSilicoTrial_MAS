@@ -122,9 +122,7 @@ def _table(
                 cells.append(f'<td class="{"num" if numeric else ""}">{text}</td>')
                 continue
             plain = text.replace("<", "&lt;").replace(">", "&gt;")
-            cells.append(
-                f'<td class="{"num" if numeric else ""}" data-value="{esc(plain)}">{plain}</td>'
-            )
+            cells.append(f'<td class="{"num" if numeric else ""}" data-value="{esc(plain)}">{plain}</td>')
         body_rows.append(f"<tr>{''.join(cells)}</tr>")
     empty_row = f'<tr><td colspan="{len(headers)}" class="muted">no data</td></tr>'
     body = "".join(body_rows) or empty_row
@@ -139,7 +137,11 @@ def _table(
 def _def_list(items: Sequence[tuple[str, Any]]) -> str:
     parts: list[str] = ['<dl class="def-list">']
     for label, value in items:
-        rendered = value if isinstance(value, str) and value.startswith("<") else esc(value if value is not None else "n/a")
+        rendered = (
+            value
+            if isinstance(value, str) and value.startswith("<")
+            else esc(value if value is not None else "n/a")
+        )
         parts.append(f"<dt>{esc(label)}</dt><dd>{rendered}</dd>")
     parts.append("</dl>")
     return "".join(parts)
@@ -268,6 +270,68 @@ def _tab_bar(active: str) -> str:
     return f'<nav class="tabs" role="tablist">{buttons}</nav>'
 
 
+def _decision(data: DashboardData) -> tuple[str, str, str]:
+    """Derive a decision-support verdict from the run, with its rule stated.
+
+    Returns ``(label, tone, rationale)``. The rule is mechanical so a reader can check it
+    against the numbers on the same screen:
+
+    * any firing safety stopping rule wins -> HOLD;
+    * a treatment-versus-control interval that excludes zero, in favour of the treatment
+      -> PROCEED, naming the comparison and whether it clears the protocol's MCID;
+    * otherwise REVIEW.
+    """
+
+    triggered = [row for row in (data.stopping or []) if row.get("triggered")]
+    if triggered:
+        names = ", ".join(str(row.get("rule_id") or "rule") for row in triggered[:3])
+        return (
+            "HOLD",
+            "critical",
+            f"{len(triggered)} safety stopping rule(s) fired ({names}). The safety signal is the readout.",
+        )
+
+    overview = (data.analysis or {}).get("overview") or {}
+    primary = str(overview.get("primary_endpoint") or data.protocol.get("primary_endpoint") or "")
+    rows = [
+        row for row in (data.comparisons or []) if not primary or str(row.get("endpoint")) == primary
+    ] or list(data.comparisons or [])
+
+    best: dict[str, Any] | None = None
+    for row in rows:
+        low, high = row.get("ci_low"), row.get("ci_high")
+        if low is None or high is None:
+            continue
+        separates = float(high) < 0 or float(low) > 0
+        larger = best is None or abs(float(row.get("effect_estimate") or 0.0)) > abs(
+            float(best.get("effect_estimate") or 0.0)
+        )
+        if separates and larger:
+            best = row
+
+    evaluated = len(data.stopping or [])
+    if best is not None:
+        endpoint = str(best.get("endpoint") or "primary endpoint").replace("_", " ")
+        arm = str(best.get("arm_id") or "treatment")
+        control = str(best.get("control_arm_id") or "control")
+        effect = float(best.get("effect_estimate") or 0.0)
+        low, high = float(best.get("ci_low") or 0.0), float(best.get("ci_high") or 0.0)
+        mcid = " and clears the MCID" if best.get("meets_mcid") else ""
+        return (
+            "PROCEED",
+            "good",
+            f"{arm} versus {control} separates on {endpoint}: {effect:+.2f} "
+            f"(95% CI {low:+.2f} to {high:+.2f}){mcid}; {evaluated} safety stopping rule(s) evaluated, "
+            "none fired. Take the design forward to a real dose-finding study.",
+        )
+    return (
+        "REVIEW",
+        "warn",
+        f"No stopping rule fired ({evaluated} evaluated), but no comparison separates from control with an "
+        "interval that excludes zero. The design needs another look before a dose is carried forward.",
+    )
+
+
 def _overview_panel(data: DashboardData) -> str:
     overview = (data.analysis or {}).get("overview") or {}
     provenance = data.provenance or {}
@@ -278,9 +342,27 @@ def _overview_panel(data: DashboardData) -> str:
     worst_grade3 = max((float(row.get("grade3_plus_rate") or 0.0) for row in summaries), default=0.0)
     sae = max((float(row.get("sae_rate") or 0.0) for row in summaries), default=0.0)
 
+    label, tone, rationale = _decision(data)
+    decision_card = _card(
+        "Decision support",
+        f'<p class="decision">{_chip(label, tone)}</p>'
+        f'<p class="muted">{esc(rationale)}</p>'
+        '<p class="muted">Rule: a firing safety stopping rule wins; otherwise a treatment-versus-control '
+        "interval that excludes zero. A design aid, not a regulatory decision.</p>",
+        subtitle="derived from this run, not typed in",
+    )
+
     kpis = [
-        _kpi("Patients", str(provenance.get("n_patients", data.patient_count or "n/a")), hint=f"{len(summaries)} arms"),
-        _kpi("Silver rows", f"{data.row_count:,}" if data.row_count else "n/a", hint="patient x epoch observations"),
+        _kpi(
+            "Patients",
+            str(provenance.get("n_patients", data.patient_count or "n/a")),
+            hint=f"{len(summaries)} arms",
+        ),
+        _kpi(
+            "Silver rows",
+            f"{data.row_count:,}" if data.row_count else "n/a",
+            hint="patient x epoch observations",
+        ),
         _kpi(
             "Primary effect",
             f"{_fmt(best.get('mean_sbp_change') if best else None)} mmHg",
@@ -300,14 +382,31 @@ def _overview_panel(data: DashboardData) -> str:
         ),
         _kpi(
             "Adverse events",
-            f"{int(overview.get('n_adverse_events') or 0):,}" if overview.get("n_adverse_events") is not None else "n/a",
+            f"{int(overview.get('n_adverse_events') or 0):,}"
+            if overview.get("n_adverse_events") is not None
+            else "n/a",
             hint="modelled + persona-reported",
         ),
-        _kpi("Grade >= 3", _fmt_pct(worst_grade3), hint="worst arm", tone="warn" if worst_grade3 > 0.1 else ""),
+        _kpi(
+            "Grade >= 3", _fmt_pct(worst_grade3), hint="worst arm", tone="warn" if worst_grade3 > 0.1 else ""
+        ),
         _kpi("Serious AEs", _fmt_pct(sae), hint="worst arm", tone="critical" if sae > 0.05 else ""),
-        _kpi("Safety alerts", str(len(data.safety_alerts)), hint="DSMB review signals", tone="critical" if data.safety_alerts else "good"),
-        _kpi("Duration", f"{_fmt(provenance.get('duration_seconds'), 1)} s", hint=f"engine: {provenance.get('engine_backend', 'n/a')}"),
-        _kpi("Model", str(provenance.get("physiology_backend", "n/a")), hint=str(provenance.get("physiology_model_version", ""))[:28]),
+        _kpi(
+            "Safety alerts",
+            str(len(data.safety_alerts)),
+            hint="DSMB review signals",
+            tone="critical" if data.safety_alerts else "good",
+        ),
+        _kpi(
+            "Duration",
+            f"{_fmt(provenance.get('duration_seconds'), 1)} s",
+            hint=f"engine: {provenance.get('engine_backend', 'n/a')}",
+        ),
+        _kpi(
+            "Model",
+            str(provenance.get("physiology_backend", "n/a")),
+            hint=str(provenance.get("physiology_model_version", ""))[:28],
+        ),
     ]
 
     def _arm_ci(row: dict[str, Any], sign: float) -> float:
@@ -348,12 +447,19 @@ def _overview_panel(data: DashboardData) -> str:
         }
         for index, row in enumerate(data.comparisons or [])
     ]
-    forest = forest_plot(comparison_rows, description="Effect versus control with 95% confidence interval; the dashed line is no effect.")
+    forest = forest_plot(
+        comparison_rows,
+        description="Effect versus control with 95% confidence interval; the dashed line is no effect.",
+    )
 
     flow = data.cohort_flow or {}
     consort_steps = [
         ("Screened", flow.get("screened", "n/a"), ""),
-        ("Screen failures", flow.get("screen_failures", "n/a"), ", ".join(f"{k}: {v}" for k, v in list((flow.get("failure_reasons") or {}).items())[:3])),
+        (
+            "Screen failures",
+            flow.get("screen_failures", "n/a"),
+            ", ".join(f"{k}: {v}" for k, v in list((flow.get("failure_reasons") or {}).items())[:3]),
+        ),
         ("Randomised and simulated", flow.get("enrolled", "n/a"), "stratified block randomisation"),
         ("Completed all epochs", flow.get("completed", "n/a"), ""),
         ("Discontinued treatment", flow.get("discontinued", "n/a"), "toxicity or consent withdrawal"),
@@ -368,8 +474,8 @@ def _overview_panel(data: DashboardData) -> str:
     alerts_html = (
         '<ul class="alert-list">'
         + "".join(
-            f'<li>{_chip(str(alert.get("severity", "info")).upper(), "critical" if alert.get("severity") == "high" else "warn")}'
-            f'<span>{esc(alert.get("message", ""))}</span></li>'
+            f"<li>{_chip(str(alert.get('severity', 'info')).upper(), 'critical' if alert.get('severity') == 'high' else 'warn')}"
+            f"<span>{esc(alert.get('message', ''))}</span></li>"
             for alert in data.safety_alerts
         )
         + "</ul>"
@@ -380,7 +486,9 @@ def _overview_panel(data: DashboardData) -> str:
 
     return f"""
 <section class="panel" data-panel="overview" data-active="true">
-  <div class="grid grid--kpi">{''.join(kpis)}</div>
+    {decision_card}
+
+    <div class="grid grid--kpi" style="margin-top:16px">{"".join(kpis)}</div>
 
   <div class="grid grid--2" style="margin-top:16px">
     {_card("Primary endpoint by arm", _chart_block(dose_chart), subtitle="mean change from baseline with 95% CI", flush=False)}
@@ -461,15 +569,27 @@ def _efficacy_panel(data: DashboardData) -> str:
             height=250,
             width=680,
         )
-        trajectory_blocks.append(_card(f"{trajectory['label']} trajectory", _chart_block(chart), subtitle=f"mean per arm with 95% CI ({trajectory['unit']})"))
+        trajectory_blocks.append(
+            _card(
+                f"{trajectory['label']} trajectory",
+                _chart_block(chart),
+                subtitle=f"mean per arm with 95% CI ({trajectory['unit']})",
+            )
+        )
 
-    concentration = next((item for item in (data.trajectories or []) if item["metric"] == "plasma_conc_mg_l"), None)
+    concentration = next(
+        (item for item in (data.trajectories or []) if item["metric"] == "plasma_conc_mg_l"), None
+    )
     concentration_card = ""
     if concentration:
         epochs = sorted({epoch for series in concentration["series"] for epoch in series["epochs"]})
         chart = line_with_band(
             epochs,
-            [{"name": series["name"], "values": series["values"]} for series in concentration["series"] if series["epochs"] == epochs],
+            [
+                {"name": series["name"], "values": series["values"]}
+                for series in concentration["series"]
+                if series["epochs"] == epochs
+            ],
             title="Exposure by arm",
             description="Mean average steady-state plasma concentration per arm and epoch.",
             x_label="epoch",
@@ -478,14 +598,20 @@ def _efficacy_panel(data: DashboardData) -> str:
             width=680,
             band=False,
         )
-        concentration_card = _card("Exposure (PK)", _chart_block(chart), subtitle="mean average steady-state concentration per arm")
+        concentration_card = _card(
+            "Exposure (PK)", _chart_block(chart), subtitle="mean average steady-state concentration per arm"
+        )
 
     dose_response = data.dose_response or []
     dose_chart = bar_with_ci(
         labels=[str(row.get("label") or row.get("arm_id")) for row in dose_response],
         values=[float(row["mean"]) if row.get("mean") is not None else float("nan") for row in dose_response],
-        lower=[float(row["ci_low"]) if row.get("ci_low") is not None else float("nan") for row in dose_response],
-        upper=[float(row["ci_high"]) if row.get("ci_high") is not None else float("nan") for row in dose_response],
+        lower=[
+            float(row["ci_low"]) if row.get("ci_low") is not None else float("nan") for row in dose_response
+        ],
+        upper=[
+            float(row["ci_high"]) if row.get("ci_high") is not None else float("nan") for row in dose_response
+        ],
         title="Dose-response",
         description="Mean primary endpoint value by nominal dose with 95% confidence interval.",
         height=250,
@@ -523,7 +649,7 @@ def _efficacy_panel(data: DashboardData) -> str:
     {_card("Dose-response", _chart_block(dose_chart), subtitle=trend_note or "mean primary endpoint by nominal dose")}
   </div>
   <div style="margin-top:16px">{_card("Treatment comparisons versus control", comparison_table, subtitle="Welch t-test or two-proportion/Fisher exact with bootstrap or Newcombe intervals; q-values control the secondary family")}</div>
-  <div class="grid grid--2" style="margin-top:16px">{''.join(trajectory_blocks)}{concentration_card}</div>
+  <div class="grid grid--2" style="margin-top:16px">{"".join(trajectory_blocks)}{concentration_card}</div>
   <div style="margin-top:16px">{_card("Demographics and baseline", demographics_table)}</div>
 </section>
 """
@@ -581,9 +707,12 @@ def _safety_panel(data: DashboardData) -> str:
     rule_specs = {str(rule.get("rule_id")): rule for rule in (data.stopping_rules or [])}
     monitors: list[str] = []
     for rule_id, spec in list(rule_specs.items())[:4]:
-        for arm_id in sorted({str(row.get("arm_id")) for row in (data.stopping or []) if str(row.get("rule_id")) == rule_id}):
+        for arm_id in sorted(
+            {str(row.get("arm_id")) for row in (data.stopping or []) if str(row.get("rule_id")) == rule_id}
+        ):
             evaluation = [
-                row for row in (data.stopping or [])
+                row
+                for row in (data.stopping or [])
                 if str(row.get("rule_id")) == rule_id and str(row.get("arm_id")) == arm_id
             ]
             evaluation.sort(key=lambda row: row.get("epoch") or 0)
@@ -594,7 +723,13 @@ def _safety_panel(data: DashboardData) -> str:
                 title=f"{rule_id} - {arm_id}",
                 description=f"{spec.get('description', '')} Threshold {_fmt_pct(spec.get('threshold'))}, action {spec.get('action')}.",
             )
-            monitors.append(_card(f"{rule_id} - {arm_id}", _chart_block(chart), subtitle=f"{spec.get('metric')} vs threshold {_fmt_pct(spec.get('threshold'))}"))
+            monitors.append(
+                _card(
+                    f"{rule_id} - {arm_id}",
+                    _chart_block(chart),
+                    subtitle=f"{spec.get('metric')} vs threshold {_fmt_pct(spec.get('threshold'))}",
+                )
+            )
 
     triggered = [row for row in (data.stopping or []) if row.get("triggered")]
     triggered_table = _table(
@@ -623,7 +758,7 @@ def _safety_panel(data: DashboardData) -> str:
   <div style="margin-top:16px">
     {_card("Data Safety Monitoring Board stopping rules", triggered_table, subtitle=f"{len(triggered)} of {len(data.stopping or [])} rule/arm/epoch evaluations triggered")}
   </div>
-  <div class="grid grid--2" style="margin-top:16px">{''.join(monitors)}</div>
+  <div class="grid grid--2" style="margin-top:16px">{"".join(monitors)}</div>
 </section>
 """
 
@@ -655,24 +790,33 @@ def _patients_panel(data: DashboardData) -> str:
     return f"""
 <section class="panel" data-panel="patients">
   <div class="grid" style="grid-template-columns:minmax(280px,360px) 1fr; align-items:start">
-    {_card(
-        "Cohort",
-        f'<input class="search-input" type="search" data-patient-search placeholder="Search patient id, arm, G3+..." aria-label="Search patients"/>'
-        f'<div class="patient-list" data-patient-list style="margin-top:10px">{rows}</div>',
-        subtitle=summary,
-    )}
+    {
+        _card(
+            "Cohort",
+            f'<input class="search-input" type="search" data-patient-search placeholder="Search patient id, arm, G3+..." aria-label="Search patients"/>'
+            f'<div class="patient-list" data-patient-list style="margin-top:10px">{rows}</div>',
+            subtitle=summary,
+        )
+    }
     <div data-patient-detail>
-      {_card("Patient detail", '<p class="muted">Select a patient to inspect its individual trajectory, genotype-driven exposure and persona narration.</p>')}
+      {
+        _card(
+            "Patient detail",
+            '<p class="muted">Select a patient to inspect its individual trajectory, genotype-driven exposure and persona narration.</p>',
+        )
+    }
     </div>
   </div>
   <div style="margin-top:16px">
-    {_card(
-        "How to read this view",
-        '<p class="muted" style="margin:0">Each row is one digital twin agent. The trajectory shows the administered dose '
-        "(bars), the simulated plasma concentration (solid line), systolic blood pressure (dashed line) and every adverse "
-        "event the agent experienced (markers above the plot). Persona narration, when the LLM trigger fired, is quoted "
-        "verbatim - it is the qualitative half of the hybrid model.</p>",
-    )}
+    {
+        _card(
+            "How to read this view",
+            '<p class="muted" style="margin:0">Each row is one digital twin agent. The trajectory shows the administered dose '
+            "(bars), the simulated plasma concentration (solid line), systolic blood pressure (dashed line) and every adverse "
+            "event the agent experienced (markers above the plot). Persona narration, when the LLM trigger fired, is quoted "
+            "verbatim - it is the qualitative half of the hybrid model.</p>",
+        )
+    }
   </div>
 </section>
 """
@@ -696,12 +840,27 @@ def _reproducibility_panel(data: DashboardData) -> str:
             ("Spark", esc(provenance.get("spark_version", "") or "not used")),
             ("Storage", esc(provenance.get("storage_backend", "n/a"))),
             ("Silver location", f'<span class="mono">{esc(provenance.get("silver_location", "n/a"))}</span>'),
-            ("Physiology model", f'{esc(provenance.get("physiology_model_version", "n/a"))} ({esc(provenance.get("physiology_backend", ""))})'),
-            ("Model digest", f'<span class="mono">{esc(provenance.get("physiology_model_digest", "n/a") or "n/a")}</span>'),
-            ("LLM policy", f'{esc(provenance.get("llm_provider", ""))} / {esc(provenance.get("llm_model", "") or "offline")} / mode {esc(provenance.get("llm_mode", "off"))}'),
-            ("LLM calls", f'{esc(provenance.get("total_llm_calls", 0))} (cache hits {esc(provenance.get("llm_cache_hits", 0))})'),
-            ("Duration", f'{_fmt(provenance.get("duration_seconds"), 1)} s'),
-            ("Started / finished", f'{esc(provenance.get("started_at", ""))} -> {esc(provenance.get("finished_at", ""))}'),
+            (
+                "Physiology model",
+                f"{esc(provenance.get('physiology_model_version', 'n/a'))} ({esc(provenance.get('physiology_backend', ''))})",
+            ),
+            (
+                "Model digest",
+                f'<span class="mono">{esc(provenance.get("physiology_model_digest", "n/a") or "n/a")}</span>',
+            ),
+            (
+                "LLM policy",
+                f"{esc(provenance.get('llm_provider', ''))} / {esc(provenance.get('llm_model', '') or 'offline')} / mode {esc(provenance.get('llm_mode', 'off'))}",
+            ),
+            (
+                "LLM calls",
+                f"{esc(provenance.get('total_llm_calls', 0))} (cache hits {esc(provenance.get('llm_cache_hits', 0))})",
+            ),
+            ("Duration", f"{_fmt(provenance.get('duration_seconds'), 1)} s"),
+            (
+                "Started / finished",
+                f"{esc(provenance.get('started_at', ''))} -> {esc(provenance.get('finished_at', ''))}",
+            ),
         ]
     )
 
@@ -723,7 +882,10 @@ def _reproducibility_panel(data: DashboardData) -> str:
         [
             ("Silver rows", esc(quality.get("rows", data.row_count))),
             ("Distinct patients", esc(quality.get("patients", data.patient_count))),
-            ("Narrated rows", f'{esc(quality.get("llm_narrated_rows", 0))} ({_fmt_pct((quality.get("llm_narrated_pct") or 0) / 100)})'),
+            (
+                "Narrated rows",
+                f"{esc(quality.get('llm_narrated_rows', 0))} ({_fmt_pct((quality.get('llm_narrated_pct') or 0) / 100)})",
+            ),
             ("Narration failures", esc(quality.get("llm_error_rows", 0))),
             ("Model versions", esc(", ".join(quality.get("model_versions", []) or []))),
             ("Backends", esc(", ".join(quality.get("physiology_backends", []) or []))),
@@ -740,7 +902,9 @@ def _reproducibility_panel(data: DashboardData) -> str:
         ]
     )
 
-    replay_command = str(replay.get("command") or f"insilico-trial simulate --config <config.yaml> --run-id {data.run_id}")
+    replay_command = str(
+        replay.get("command") or f"insilico-trial simulate --config <config.yaml> --run-id {data.run_id}"
+    )
 
     return f"""
 <section class="panel" data-panel="reproducibility">
@@ -753,15 +917,17 @@ def _reproducibility_panel(data: DashboardData) -> str:
     {_card("Cost estimate (pre-run)", estimate_list, subtitle="computed before the simulation started")}
   </div>
   <div style="margin-top:16px">
-    {_card(
-        "Replay recipe",
-        f'<pre class="code">{esc(replay_command)}</pre>'
-        '<p class="muted" style="margin:10px 0 0">Random draws are derived from '
-        '<span class="mono">sha256(seed, run, patient, epoch, purpose)</span>, so re-running with the same seed and '
-        'protocol digest reproduces every simulated value. Wall-clock metadata '
-        '(<span class="mono">observation_ts</span>, <span class="mono">llm_latency_ms</span>) is excluded by design.</p>',
-        subtitle="deterministic by construction",
-    )}
+    {
+        _card(
+            "Replay recipe",
+            f'<pre class="code">{esc(replay_command)}</pre>'
+            '<p class="muted" style="margin:10px 0 0">Random draws are derived from '
+            '<span class="mono">sha256(seed, run, patient, epoch, purpose)</span>, so re-running with the same seed and '
+            "protocol digest reproduces every simulated value. Wall-clock metadata "
+            '(<span class="mono">observation_ts</span>, <span class="mono">llm_latency_ms</span>) is excluded by design.</p>',
+            subtitle="deterministic by construction",
+        )
+    }
   </div>
 </section>
 """
@@ -781,7 +947,9 @@ def _lineage_panel(data: DashboardData) -> str:
     flow_parts: list[str] = []
     for edge in edges[:24]:
         flow_parts.append(node_html(str(edge.get("source"))))
-        flow_parts.append(f'<span class="flow__arrow">&rarr;<span class="faint" style="font-size:11px"> {esc(edge.get("relation", ""))}</span></span>')
+        flow_parts.append(
+            f'<span class="flow__arrow">&rarr;<span class="faint" style="font-size:11px"> {esc(edge.get("relation", ""))}</span></span>'
+        )
         flow_parts.append(node_html(str(edge.get("target"))))
         flow_parts.append('<span class="flow__arrow" style="flex-basis:100%"></span>')
 
@@ -804,16 +972,27 @@ def _lineage_panel(data: DashboardData) -> str:
     )
 
     trace_kpis = [
-        _kpi("LLM calls", str(traces.get("llm_calls", 0)), hint=f"rows narrated: {traces.get('narrated_rows', 0)}"),
+        _kpi(
+            "LLM calls",
+            str(traces.get("llm_calls", 0)),
+            hint=f"rows narrated: {traces.get('narrated_rows', 0)}",
+        ),
         _kpi("Cache hit rate", _fmt_pct(traces.get("cache_hit_rate")), hint="reused responses"),
         _kpi("Prompt tokens", f"{int(traces.get('tokens_in_total') or 0):,}", hint="total input tokens"),
-        _kpi("Completion tokens", f"{int(traces.get('tokens_out_total') or 0):,}", hint="total output tokens"),
-        _kpi("Narration errors", _fmt_pct(traces.get("error_rate")), hint="fallbacks included", tone="warn" if (traces.get("error_rate") or 0) > 0.01 else ""),
+        _kpi(
+            "Completion tokens", f"{int(traces.get('tokens_out_total') or 0):,}", hint="total output tokens"
+        ),
+        _kpi(
+            "Narration errors",
+            _fmt_pct(traces.get("error_rate")),
+            hint="fallbacks included",
+            tone="warn" if (traces.get("error_rate") or 0) > 0.01 else "",
+        ),
     ]
 
     trace_note = (
         '<p class="note">Per-call spans are written to <span class="mono">tracking.trace_path</span> as JSONL and, when '
-        "tracking is enabled, copied to <span class=\"mono\">bronze.llm_raw_traces</span>. The distributions above are "
+        'tracking is enabled, copied to <span class="mono">bronze.llm_raw_traces</span>. The distributions above are '
         "derived from the Silver columns, so they are available even when tracing is off.</p>"
     )
 
@@ -826,20 +1005,21 @@ def _lineage_panel(data: DashboardData) -> str:
 
     return f"""
 <section class="panel" data-panel="lineage">
-  {_card("Agent and table lineage", f'<div class="flow">{flow_body}</div>',
-         subtitle=lineage_subtitle)}
-  <div class="grid grid--kpi" style="margin-top:16px">{''.join(trace_kpis)}</div>
+  {_card("Agent and table lineage", f'<div class="flow">{flow_body}</div>', subtitle=lineage_subtitle)}
+  <div class="grid grid--kpi" style="margin-top:16px">{"".join(trace_kpis)}</div>
   <div class="grid grid--2" style="margin-top:16px">
     {_card("Prompt token distribution", _chart_block(token_chart), subtitle="cost driver per persona call")}
     {_card("Provider latency", _chart_block(latency_chart), subtitle="network and inference time")}
   </div>
   <div style="margin-top:16px">{trace_note}</div>
   <div style="margin-top:16px">
-    {_card(
-        "Mermaid source",
-        f'<pre class="code">{esc(mermaid) if mermaid else "not recorded"}</pre>',
-        subtitle="paste into a Mermaid renderer (GitHub, Databricks markdown, mermaid.live)",
-    )}
+    {
+        _card(
+            "Mermaid source",
+            f'<pre class="code">{esc(mermaid) if mermaid else "not recorded"}</pre>',
+            subtitle="paste into a Mermaid renderer (GitHub, Databricks markdown, mermaid.live)",
+        )
+    }
   </div>
 </section>
 """
@@ -858,7 +1038,9 @@ def _patient_detail_payload(data: DashboardData) -> dict[str, Any]:
             dose_mg=detail["dose_mg"],
             concentration=detail["concentration"],
             sbp=detail["sbp"],
-            adverse_events={int(epoch): terms for epoch, terms in (detail.get("adverse_by_epoch") or {}).items()},
+            adverse_events={
+                int(epoch): terms for epoch, terms in (detail.get("adverse_by_epoch") or {}).items()
+            },
             title=f"Patient {patient['patient_id']}",
             description="Dose, exposure, systolic blood pressure and adverse events per simulated epoch.",
         ).svg
@@ -948,7 +1130,9 @@ def build_dashboard(data: DashboardData) -> str:
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     detail_payload = _patient_detail_payload(data)
     notes = "".join(f'<p class="note note--warn">{esc(note)}</p>' for note in data.notes)
-    warnings = "".join(f'<p class="note note--warn">Protocol review: {esc(item)}</p>' for item in data.warnings or [])
+    warnings = "".join(
+        f'<p class="note note--warn">Protocol review: {esc(item)}</p>' for item in data.warnings or []
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1007,7 +1191,11 @@ def write_dashboard(run_dir: str | Path, output_path: str | Path | None = None) 
 
 def dashboard_summary_text(data: DashboardData) -> str:
     """Short plain-text recap used by the CLI after writing the file."""
-    lines = [f"run {data.run_id}", f"patients {data.patient_count or 'n/a'}", f"rows {data.row_count or 'n/a'}"]
+    lines = [
+        f"run {data.run_id}",
+        f"patients {data.patient_count or 'n/a'}",
+        f"rows {data.row_count or 'n/a'}",
+    ]
     for row in (data.arm_summaries or [])[:4]:
         lines.append(
             f"{row.get('arm_id')}: dSBP {_fmt(row.get('mean_sbp_change'))} mmHg, "

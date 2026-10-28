@@ -257,3 +257,92 @@ def test_resolve_run_dir_accepts_a_parent_directory(tmp_path, config, protocol) 
     assert resolve_run_dir(run_dir.parent) == run_dir
     with pytest.raises(FileNotFoundError):
         resolve_run_dir(tmp_path / "nothing-here")
+
+
+# ---------------------------------------------------------------------------
+# Decision support card
+# ---------------------------------------------------------------------------
+
+
+def _decision_data(**kwargs):
+    """Minimal DashboardData for exercising the decision rule."""
+    from insilico_trial_mas.ui.data import DashboardData
+
+    base = {
+        "run_dir": "/tmp/run",
+        "analysis": {"overview": {"primary_endpoint": "change_in_systolic_bp"}},
+    }
+    base.update(kwargs)
+    return DashboardData(**base)
+
+
+def test_decision_holds_when_a_stopping_rule_fires() -> None:
+    from insilico_trial_mas.ui.dashboard import _decision
+
+    data = _decision_data(
+        stopping=[{"rule_id": "liver-enzyme", "triggered": True}],
+        comparisons=[
+            {
+                "endpoint": "change_in_systolic_bp",
+                "effect_estimate": -8.0,
+                "ci_low": -11.0,
+                "ci_high": -5.0,
+            }
+        ],
+    )
+    label, tone, rationale = _decision(data)
+    assert label == "HOLD"
+    assert tone == "critical"
+    assert "liver-enzyme" in rationale
+
+
+def test_decision_proceeds_on_the_primary_endpoint_only() -> None:
+    from insilico_trial_mas.ui.dashboard import _decision
+
+    data = _decision_data(
+        stopping=[{"rule_id": "liver-enzyme", "triggered": False}],
+        comparisons=[
+            {
+                "endpoint": "change_in_systolic_bp",
+                "arm_id": "high_dose",
+                "control_arm_id": "placebo",
+                "effect_estimate": -8.45,
+                "ci_low": -11.2,
+                "ci_high": -5.7,
+                "meets_mcid": True,
+            },
+            {
+                "endpoint": "alt_elevation",
+                "arm_id": "high_dose",
+                "effect_estimate": 21.8,
+                "ci_low": 10.8,
+                "ci_high": 32.6,
+            },
+        ],
+    )
+    label, tone, rationale = _decision(data)
+    assert (label, tone) == ("PROCEED", "good")
+    # A larger safety-endpoint effect must not become the verdict.
+    assert "change in systolic bp" in rationale
+    assert "alt elevation" not in rationale
+    assert "-8.45" in rationale
+    assert "clears the MCID" in rationale
+
+
+def test_decision_reviews_when_nothing_separates() -> None:
+    from insilico_trial_mas.ui.dashboard import _decision
+
+    data = _decision_data(
+        stopping=[{"rule_id": "liver-enzyme", "triggered": False}],
+        comparisons=[
+            {"endpoint": "change_in_systolic_bp", "effect_estimate": -1.0, "ci_low": -4.0, "ci_high": 2.0}
+        ],
+    )
+    label, tone, _ = _decision(data)
+    assert (label, tone) == ("REVIEW", "warn")
+
+
+def test_dashboard_renders_the_decision_card(dashboard_html: str) -> None:
+    assert 'class="decision"' in dashboard_html
+    assert "Decision support" in dashboard_html
+    assert "not a regulatory decision" in dashboard_html

@@ -186,6 +186,7 @@ p { margin: 0 0 12px; }
 .kpi .kpi__label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-text-faint); margin-bottom: 6px; }
 .kpi .kpi__hint { font-size: 12.5px; color: var(--c-text-muted); }
 .kpi--good .kpi__value { color: var(--c-good); }
+.decision .chip { font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
 .kpi--warn .kpi__value { color: var(--c-warn); }
 .kpi--critical .kpi__value { color: var(--c-critical); }
 
