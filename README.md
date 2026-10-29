@@ -81,8 +81,8 @@ lineage graph — are in the
 
 A real session, not a mock-up: the Studio launches the phase II hypertension protocol on
 400 synthetic patients, the run executes, and the readout is generated from it. The patient
-personas in that run were written by a real LLM — DeepSeek, 134 calls, recorded in the run
-manifest — and the verdict on screen is derived from the run's own numbers.
+personas in that run were written by a live model through the project's LLM provider
+interface, and the verdict on screen is derived from the run's own numbers.
 
 <sub>Direct link: [docs/media/insilico-trial-demo.mp4](docs/media/insilico-trial-demo.mp4)
 (79 s, 15.8 MB). Narration in English; the interface is recorded in the dark theme used by
